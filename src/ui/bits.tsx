@@ -1,11 +1,14 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { START_PRESETS } from '../lib/time';
 
-export const Screen = ({ title, children }: { title: string; children: ReactNode }) => (
+export const Screen = ({ title, children, onBack }: { title: string; children: ReactNode; onBack?: () => void }) => (
   <main className="screen">
     <header>
-      <Link to="/" className="back" aria-label="Home">‹</Link>
+      {onBack ? (
+        <button className="back" aria-label="Back" onClick={onBack}>‹</button>
+      ) : (
+        <Link to="/" className="back" aria-label="Home">‹</Link>
+      )}
       <h1>{title}</h1>
     </header>
     {children}
@@ -28,19 +31,5 @@ export function Chips<T extends string | number>({ options, selected, onToggle, 
         </button>
       ))}
     </div>
-  );
-}
-
-export function StartPicker({ value, onChange }: { value: number; onChange: (minutesAgo: number) => void }) {
-  return (
-    <>
-      <h2>Started</h2>
-      <Chips
-        options={START_PRESETS.map((p) => p.minutes)}
-        selected={[value]}
-        onToggle={onChange}
-        render={(m) => START_PRESETS.find((p) => p.minutes === m)!.label}
-      />
-    </>
   );
 }

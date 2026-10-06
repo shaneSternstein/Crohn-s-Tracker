@@ -1,10 +1,7 @@
 import { db } from './schema';
 import type { Preset } from '../domain/types';
 
-const symptoms = [
-  'Pain', 'Cramping', 'Bloating', 'Nausea', 'Urgency', 'Diarrhea',
-  'Constipation', 'Gas', 'Reflux', 'Fatigue', 'Headache', 'Joint pain',
-];
+const symptoms = ['Pain', 'Cramping', 'Bloating', 'Nausea', 'Gas', 'Reflux', 'Fatigue', 'Headache', 'Joint pain'];
 const activities = ['Walk', 'Run', 'Workout', 'Yoga', 'Stretching', 'Stress'];
 const stoolTags = ['Urgency', 'Blood', 'Mucus', 'Incomplete'];
 

@@ -19,6 +19,12 @@ export class TrackerDB extends Dexie {
       hydration: '++id, at',
       presets: '++id, type, &[type+label]',
     });
+    // Bowel-related symptoms are captured by stool entries (Bristol type + tags).
+    this.version(2).stores({}).upgrade((tx) =>
+      tx.table('presets')
+        .filter((p) => p.type === 'symptom' && ['Diarrhea', 'Constipation', 'Urgency'].includes(p.label))
+        .delete(),
+    );
   }
 }
 

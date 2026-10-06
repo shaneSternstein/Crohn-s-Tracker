@@ -3,18 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { addEntry, recentItems, saveItem } from '../../db/repo';
 import type { Item } from '../../domain/types';
-import { presetToTime } from '../../lib/time';
-import { Chips, StartPicker } from '../../ui/bits';
+import { Chips } from '../../ui/bits';
+import { TimeField } from '../../ui/TimeField';
 
 export default function MedEntry() {
   const nav = useNavigate();
-  const [mins, setMins] = useState(0);
+  const [at, setAt] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [dose, setDose] = useState('');
   const meds = useLiveQuery(() => recentItems('medication', 40), [], [] as Item[]);
 
   const log = async (itemId: number) => {
-    await addEntry({ type: 'medication', start: presetToTime(mins), ongoing: false, itemId });
+    await addEntry({ type: 'medication', start: at ?? Date.now(), ongoing: false, itemId });
     nav('/');
   };
   const create = async () =>
@@ -22,7 +22,7 @@ export default function MedEntry() {
 
   return (
     <>
-      <StartPicker value={mins} onChange={setMins} />
+      <TimeField label="Time" value={at} onChange={setAt} quick={[15]} />
       {meds.length > 0 && (
         <>
           <h2>Saved</h2>

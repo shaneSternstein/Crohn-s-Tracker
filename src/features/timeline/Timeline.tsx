@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, type CSSProperties } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/schema';
-import { deleteEntry, endEntry, entriesBetween } from '../../db/repo';
+import { endEntry, entriesBetween } from '../../db/repo';
 import { COLUMN_COLOR, COLUMN_LABEL, COLUMN_OF, type Column } from '../../domain/columns';
 import type { Entry, Item } from '../../domain/types';
 import { HOUR, dayRange, startOfDay } from '../../lib/time';
@@ -20,8 +20,17 @@ const shiftDay = (t: number, n: number) => {
 };
 
 export default function Timeline() {
-  const [day, setDay] = useState(startOfDay());
-  const [view, setView] = useState<'day' | 'list'>('day');
+  const [params, setParams] = useSearchParams();
+  const day = Number(params.get('d')) || startOfDay();
+  const view = params.get('v') === 'list' ? 'list' : 'day';
+  const update = (patch: Record<string, string>) =>
+    setParams((p) => {
+      const n = new URLSearchParams(p);
+      Object.entries(patch).forEach(([k, v]) => n.set(k, v));
+      return n;
+    }, { replace: true });
+  const setDay = (t: number) => update({ d: String(t) });
+  const setView = (v: 'day' | 'list') => update({ v });
   const [from, to] = dayRange(day);
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -78,8 +87,9 @@ export default function Timeline() {
               return (
                 <div key={c} className="col">
                   {blocks.map((b) => (
-                    <div
+                    <Link
                       key={b.item.id}
+                      to={`/edit/${b.item.id}`}
                       className="blk"
                       style={{
                         top: y(b.start),
@@ -90,7 +100,7 @@ export default function Timeline() {
                       }}
                     >
                       {labelOf(b.item, items)}
-                    </div>
+                    </Link>
                   ))}
                   {overflow.map((o) => (
                     <button key={o.at} className="more" style={{ top: y(o.at) }} onClick={() => setView('list')}>
@@ -109,9 +119,8 @@ export default function Timeline() {
           {entries.map((e) => (
             <li key={e.id} className="li" style={{ '--c': COLUMN_COLOR[COLUMN_OF[e.type]] } as CSSProperties}>
               <time>{fmt(e.start)}</time>
-              <span className="grow">{labelOf(e, items)}{e.ongoing && ', ongoing'}</span>
+              <Link className="grow row-link" to={`/edit/${e.id}`}>{labelOf(e, items)}{e.ongoing && ', ongoing'}</Link>
               {e.ongoing && <button className="chip" onClick={() => endEntry(e.id!)}>End</button>}
-              <button className="chip" aria-label="Delete" onClick={() => deleteEntry(e.id!)}>×</button>
             </li>
           ))}
         </ul>

@@ -1,4 +1,5 @@
 import { db } from './schema';
+import { ML_PER_CUP } from '../domain/hydration';
 import { flattenIngredientIds } from '../domain/recipes';
 import type {
   Component, Entry, HydrationLog, IngredientLine, Item, ItemKind, SleepLog,
@@ -98,9 +99,10 @@ export const logSleep = (start: number, end: number) => db.sleep.add({ start, en
 export const sleepBetween = (from: number, to: number): Promise<SleepLog[]> =>
   db.sleep.where('start').between(from, to).toArray();
 
-export const addWater = (ml = 250, at = Date.now()) => db.hydration.add({ at, ml });
+export const addWater = (ml = ML_PER_CUP, at = Date.now()) => db.hydration.add({ at, ml });
+export const lastWater = () => db.hydration.orderBy('at').last();
 export const undoLastWater = async () => {
-  const last = await db.hydration.orderBy('at').last();
+  const last = await lastWater();
   if (last?.id !== undefined) await db.hydration.delete(last.id);
 };
 export const hydrationBetween = (from: number, to: number): Promise<HydrationLog[]> =>

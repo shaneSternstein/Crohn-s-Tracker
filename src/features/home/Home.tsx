@@ -1,8 +1,9 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { addWater, hydrationTotal, undoLastWater } from '../../db/repo';
-import { dayRange } from '../../lib/time';
+import { db } from '../../db/schema';
+import { backupDue, lastBackupAt } from '../../lib/backup';
+import WaterTile from './WaterTile';
 
 const TILES = [
   { to: '/add/food', label: 'Food', color: 'var(--food)' },
@@ -15,25 +16,35 @@ const TILES = [
 ];
 const tint = (c: string) => ({ '--tile': c }) as CSSProperties;
 
+function BackupReminder() {
+  const hasData = useLiveQuery(async () => (await db.entries.count()) > 0, [], false);
+  if (!hasData || !backupDue()) return null;
+  const last = lastBackupAt();
+  return (
+    <Link to="/settings" className="banner">
+      Back up your data
+      <small>{last ? `Last backup ${Math.floor((Date.now() - last) / 86_400_000)} days ago` : 'No backup yet'}</small>
+    </Link>
+  );
+}
+
 export default function Home() {
-  const ml = useLiveQuery(() => hydrationTotal(...dayRange()), [], 0);
   return (
     <main className="screen">
-      <header><h1>{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</h1></header>
+      <header className="home-head">
+        <h1>{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</h1>
+        <Link to="/settings" className="chip">Settings</Link>
+      </header>
+      <BackupReminder />
       <div className="tiles">
         {TILES.map((t) => (
           <Link key={t.to} to={t.to} className={t.color === 'var(--surface-2)' ? 'tile alt' : 'tile'} style={tint(t.color)}>
             {t.label}
           </Link>
         ))}
-        <button className="tile alt" style={tint('var(--surface-2)')} onClick={() => addWater()}>
-          Water <small>{ml} ml today (+250)</small>
-        </button>
+        <WaterTile />
       </div>
-      <div className="chips">
-        <Link to="/timeline" className="btn">Timeline</Link>
-        <button className="btn ghost" onClick={() => undoLastWater()}>Undo water</button>
-      </div>
+      <Link to="/timeline" className="btn">Timeline</Link>
     </main>
   );
 }

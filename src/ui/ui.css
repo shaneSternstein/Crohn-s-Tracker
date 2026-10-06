@@ -43,3 +43,46 @@ button { cursor: pointer; }
 .li .grow { flex: 1; }
 .li time { color: var(--muted); font-size: .85rem; min-width: 64px; }
 .empty { color: var(--muted); padding: 16px; }
+
+.dial-wrap { background: var(--surface); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.digital { display: flex; align-items: center; gap: 6px; font-size: 2.5rem; font-weight: 700; }
+.digital button { border: 0; background: none; border-radius: 12px; padding: 0 10px; font-size: inherit; font-weight: inherit; }
+.digital button[aria-pressed='true'] { background: var(--sage); color: var(--ink); }
+.digital .stack { display: flex; flex-direction: column; margin-left: 8px; font-size: .9rem; }
+.digital .stack button { padding: 4px 10px; font-size: .9rem; }
+.dial { width: 240px; height: 240px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.dial .face { fill: var(--surface-2); }
+.dial .hand { stroke: var(--terracotta); stroke-width: 3; }
+.dial .hand-dot, .dial .knob { fill: var(--terracotta); }
+.dial text { fill: var(--text); font-size: 14px; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.dial .knob-text { fill: var(--ink); font-weight: 700; }
+
+.bristol { display: flex; flex-direction: column; gap: 6px; }
+.brow { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; text-align: left; border: 2px solid transparent; background: var(--surface); border-radius: var(--radius-sm); padding: 10px 12px; }
+.brow small { color: var(--muted); }
+.brow[aria-pressed='true'] { background: var(--sage); color: var(--ink); border-color: var(--ink); }
+.brow[aria-pressed='true'] small { color: var(--ink); }
+
+.stepper { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.undo { align-self: flex-start; border: 0; background: none; color: var(--muted); text-decoration: underline; padding: 4px 0; }
+
+.water-tile { position: relative; padding: 0; }
+.water-main { width: 100%; height: 100%; border: 0; background: none; border-radius: inherit; padding: 16px; text-align: left; display: flex; flex-direction: column; justify-content: flex-end; font: inherit; color: inherit; }
+.water-main small { font-weight: 500; color: var(--muted); }
+.water-more { position: absolute; right: 10px; bottom: 10px; width: 40px; height: 40px; border: 0; border-radius: 999px; background: var(--surface); font-size: 1.3rem; line-height: 1; }
+.sheet-bg { position: fixed; inset: 0; z-index: 10; background: rgba(0, 0, 0, .4); display: flex; align-items: flex-end; justify-content: center; }
+.sheet { width: 100%; max-width: 720px; background: var(--surface); border-radius: 28px 28px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; font-size: 1.15rem; }
+.sheet .chip { background: var(--surface-2); }
+.sheet .chip[aria-pressed='true'] { background: var(--sage); }
+
+button.back { border: 0; background: none; cursor: pointer; }
+.blk { display: block; text-decoration: none; }
+.row-link { color: inherit; text-decoration: none; }
+
+.home-head { justify-content: space-between; }
+.home-head .chip { text-decoration: none; color: var(--text); white-space: nowrap; }
+.banner { display: block; background: var(--butter); color: var(--ink); border-radius: var(--radius-sm); padding: 12px 14px; text-decoration: none; font-weight: 600; }
+.banner small { display: block; font-weight: 500; }
+.section { display: flex; flex-direction: column; gap: 12px; }
+label.btn { cursor: pointer; }

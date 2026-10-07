@@ -5,7 +5,7 @@ export function labelOf(e: Entry, items: Map<number, Item>): string {
   switch (e.type) {
     case 'food':
     case 'drink':
-      return item?.name ?? 'Item';
+      return `${item?.name ?? 'Item'}${e.modified ? ' (modified)' : ''}`;
     case 'medication':
       return [item?.name ?? 'Medication', e.dose].filter(Boolean).join(' ');
     case 'stool':

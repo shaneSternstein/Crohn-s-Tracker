@@ -41,10 +41,11 @@ export default function Timeline() {
     async () => {
       const ids = [...new Set(entries.flatMap((e) => (e.itemId !== undefined ? [e.itemId] : [])))];
       const direct = (await db.items.bulkGet(ids)).flatMap((i) => (i ? [i] : []));
-      const childIds = [...new Set(direct.flatMap((i) => i.components.flatMap((c) => (c.itemId !== undefined ? [c.itemId] : []))))];
+      const comps = [...entries.flatMap((e) => e.components ?? []), ...direct.flatMap((i) => i.components)];
+      const childIds = [...new Set(comps.flatMap((c) => (c.itemId !== undefined ? [c.itemId] : [])))];
       const children = (await db.items.bulkGet(childIds)).flatMap((i) => (i ? [i] : []));
       const items = new Map([...direct, ...children].map((i) => [i.id!, i] as const));
-      const ingIds = [...new Set([...items.values()].flatMap((i) => i.components.flatMap((c) => (c.ingredientId !== undefined ? [c.ingredientId] : []))))];
+      const ingIds = [...new Set(comps.flatMap((c) => (c.ingredientId !== undefined ? [c.ingredientId] : [])))];
       const names = new Map((await db.ingredients.bulkGet(ingIds)).flatMap((g) => (g ? [[g.id!, g.name] as const] : [])));
       return { items, names };
     },

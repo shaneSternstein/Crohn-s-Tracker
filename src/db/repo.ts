@@ -1,5 +1,4 @@
 import { db } from './schema';
-import { formatLine } from '../domain/describe';
 import { ML_PER_CUP } from '../domain/hydration';
 import { flattenIngredientIds } from '../domain/recipes';
 import type {
@@ -8,12 +7,45 @@ import type {
 
 export const nameKey = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 
-/* ---------- Ingredients & items ---------- */
+/* ---------- Ingredients, lines, items ---------- */
 
 async function ingredientId(name: string): Promise<number> {
   const key = nameKey(name);
   const hit = await db.ingredients.where('nameKey').equals(key).first();
   return hit?.id ?? db.ingredients.add({ name: name.trim(), nameKey: key });
+}
+
+/** Turns editable lines into components, plus direct and fully expanded ingredient ids. Call inside a transaction. */
+async function resolveLines(lines: IngredientLine[]) {
+  const components: Component[] = [];
+  const all = new Set<number>();
+  for (const l of lines) {
+    const meta = { qty: l.qty, unit: l.unit, note: l.note };
+    if (l.itemId !== undefined) {
+      components.push({ itemId: l.itemId, ...meta });
+      const child = await db.items.get(l.itemId);
+      if (child) (await flattenIngredientIds(child, getItem)).forEach((i) => all.add(i));
+    } else if (l.name?.trim()) {
+      const id = await ingredientId(l.name);
+      components.push({ ingredientId: id, ...meta });
+      all.add(id);
+    }
+  }
+  const direct = [...new Set(components.flatMap((c) => (c.ingredientId !== undefined ? [c.ingredientId] : [])))];
+  return { components, direct, all: [...all] };
+}
+
+const sigOf = (cs: Component[]) =>
+  JSON.stringify(cs.map((c) => [c.ingredientId ?? null, c.itemId ?? null, c.qty ?? null, c.unit ?? null, c.note ?? null]));
+
+export async function linesFromComponents(components: Component[]): Promise<IngredientLine[]> {
+  const lines: IngredientLine[] = [];
+  for (const c of components) {
+    const meta = { qty: c.qty, unit: c.unit, note: c.note };
+    if (c.itemId !== undefined) lines.push({ itemId: c.itemId, name: (await db.items.get(c.itemId))?.name, ...meta });
+    else if (c.ingredientId !== undefined) lines.push({ name: (await db.ingredients.get(c.ingredientId))?.name, ...meta });
+  }
+  return lines;
 }
 
 export interface ItemDraft {
@@ -24,19 +56,17 @@ export interface ItemDraft {
   lines: IngredientLine[];
 }
 
+/** Creates or updates an item. Item names are unique (case-insensitive). */
 export function saveItem(draft: ItemDraft, id?: number): Promise<number> {
   return db.transaction('rw', db.items, db.ingredients, async () => {
-    const components: Component[] = [];
-    for (const l of draft.lines) {
-      const meta = { qty: l.qty, unit: l.unit, note: l.note };
-      if (l.itemId !== undefined) components.push({ itemId: l.itemId, ...meta });
-      else if (l.name?.trim()) components.push({ ingredientId: await ingredientId(l.name), ...meta });
-    }
-    const ingredientIds = [
-      ...new Set(components.flatMap((c) => (c.ingredientId !== undefined ? [c.ingredientId] : []))),
-    ];
+    const name = draft.name.trim();
+    const key = nameKey(name);
+    const dupe = await db.items.filter((i) => nameKey(i.name) === key && i.id !== id).first();
+    if (dupe) throw new Error(`An item named "${name}" already exists. Choose a different name.`);
+
+    const { components, direct } = await resolveLines(draft.lines);
     const now = Date.now();
-    const base = { kind: draft.kind, name: draft.name.trim(), barcode: draft.barcode, dose: draft.dose, components, ingredientIds };
+    const base = { kind: draft.kind, name, barcode: draft.barcode, dose: draft.dose, components, ingredientIds: direct };
 
     if (id !== undefined) {
       await db.items.update(id, base);
@@ -59,20 +89,63 @@ export function searchItems(query: string, limit = 20): Promise<Item[]> {
   return db.items.filter((i) => nameKey(i.name).includes(q)).limit(limit).toArray();
 }
 
-/** Display lines for an item's components, e.g. ["1.5 cup flour", "2 eggs"]. */
-export async function ingredientLines(itemId: number): Promise<string[]> {
-  const item = await db.items.get(itemId);
-  if (!item) return [];
-  const [ings, kids] = await Promise.all([
-    db.ingredients.bulkGet(item.components.flatMap((c) => (c.ingredientId !== undefined ? [c.ingredientId] : []))),
-    db.items.bulkGet(item.components.flatMap((c) => (c.itemId !== undefined ? [c.itemId] : []))),
-  ]);
-  const names = new Map(ings.flatMap((g) => (g ? [[g.id!, g.name] as const] : [])));
-  const items = new Map(kids.flatMap((i) => (i ? [[i.id!, i] as const] : [])));
-  return item.components.map((c) => formatLine(c, names, items));
+export const itemIngredientIds = (item: Item) => flattenIngredientIds(item, getItem);
+
+/* ---------- Food and drink entries (each carries its own ingredient copy) ---------- */
+
+interface FoodLog { type: 'food' | 'drink'; start: number; itemId: number; lines: IngredientLine[]; modified: boolean }
+
+export function logFood(a: FoodLog): Promise<number> {
+  return db.transaction('rw', db.entries, db.items, db.ingredients, async () => {
+    const { components, all } = await resolveLines(a.lines);
+    const id = await db.entries.add({
+      type: a.type, start: a.start, ongoing: false, itemId: a.itemId,
+      components, ingredientIds: all, modified: a.modified || undefined,
+    });
+    await db.items.where(':id').equals(a.itemId).modify((i) => {
+      i.lastUsedAt = a.start;
+      i.useCount += 1;
+    });
+    return id;
+  });
 }
 
-export const itemIngredientIds = (item: Item) => flattenIngredientIds(item, getItem);
+export function updateFoodEntry(id: number, a: { start: number; itemId: number; lines: IngredientLine[] }) {
+  return db.transaction('rw', db.entries, db.items, db.ingredients, async () => {
+    const { components, all } = await resolveLines(a.lines);
+    const item = await db.items.get(a.itemId);
+    const modified = !!item && sigOf(components) !== sigOf(item.components);
+    await db.entries.update(id, {
+      start: a.start, itemId: a.itemId, components, ingredientIds: all, modified: modified || undefined,
+    });
+  });
+}
+
+/** Pushes an item's current ingredients to past entries that use it, except ones changed individually. */
+export async function applyItemToEntries(itemId: number): Promise<void> {
+  const item = await db.items.get(itemId);
+  if (!item) return;
+  const all = [...(await flattenIngredientIds(item, getItem))];
+  await db.entries
+    .filter((e) => e.itemId === itemId && (e.type === 'food' || e.type === 'drink') && !e.modified)
+    .modify((e) => {
+      e.components = item.components;
+      e.ingredientIds = all;
+    });
+}
+
+/** Gives entries logged before per-entry copies existed (or restored from old backups) a copy. Idempotent. */
+export async function backfillSnapshots(): Promise<void> {
+  const missing = await db.entries
+    .filter((e) => (e.type === 'food' || e.type === 'drink') && e.itemId !== undefined && !e.components)
+    .toArray();
+  for (const e of missing) {
+    const item = await db.items.get(e.itemId!);
+    if (!item) continue;
+    const all = [...(await flattenIngredientIds(item, getItem))];
+    await db.entries.update(e.id!, { components: item.components, ingredientIds: all });
+  }
+}
 
 /* ---------- Entries ---------- */
 

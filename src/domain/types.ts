@@ -49,6 +49,12 @@ export interface Entry {
   bristol?: Bristol; // stool entries
   tags?: string[]; // stool tags
   dose?: string; // medication entries; defaults to the item's dose
+  /** Food/drink: ingredients as actually eaten (copied at log time, so item edits never rewrite history). */
+  components?: Component[];
+  /** Food/drink: all raw ingredient ids, nested recipes expanded. Indexed for analysis. */
+  ingredientIds?: number[];
+  /** Food/drink: ingredients differ from the saved item they were based on. */
+  modified?: boolean;
   note?: string;
 }
 

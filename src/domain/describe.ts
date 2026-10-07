@@ -11,9 +11,9 @@ export function formatLine(c: Component, names: Names, items: Items): string {
   return [qty, c.unit?.replace('_', ' '), name ?? '?', c.note ? `(${c.note})` : ''].filter(Boolean).join(' ');
 }
 
-/** Ingredient summary for a food or drink entry; empty for other types. */
+/** Ingredient summary for a food or drink entry (its own copy, else the item's). Empty for other types. */
 export function ingredientText(e: Entry, items: Items, names: Names): string {
-  const item = e.itemId !== undefined ? items.get(e.itemId) : undefined;
-  if (!item || item.kind === 'medication') return '';
-  return item.components.map((c) => formatLine(c, names, items)).join(', ');
+  if (e.type !== 'food' && e.type !== 'drink') return '';
+  const comps = e.components ?? (e.itemId !== undefined ? items.get(e.itemId)?.components : undefined);
+  return comps?.map((c) => formatLine(c, names, items)).join(', ') ?? '';
 }

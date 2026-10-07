@@ -91,3 +91,12 @@ label.btn { cursor: pointer; }
 .row-link { display: flex; flex-direction: column; }
 .sub { color: var(--muted); font-size: .8rem; font-weight: 400; }
 .ing-view { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+
+.saved-list { display: flex; flex-direction: column; gap: 6px; max-height: 34vh; overflow-y: auto; }
+.saved-tile { display: flex; flex-direction: column; align-items: flex-start; text-align: left; border: 2px solid transparent; background: var(--surface); border-radius: var(--radius-sm); padding: 10px 12px; }
+.saved-tile small { color: var(--muted); }
+.saved-tile[aria-pressed='true'] { background: var(--sage); color: var(--ink); border-color: var(--ink); }
+.saved-tile[aria-pressed='true'] small { color: var(--ink); }
+.sticky-actions { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 8px; background: var(--bg); padding: 8px 0; z-index: 2; }
+.check { display: flex; gap: 10px; align-items: center; }
+.screen .check input { width: auto; padding: 0; }

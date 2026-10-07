@@ -1,3 +1,4 @@
+import { backfillSnapshots } from '../db/repo';
 import { db } from '../db/schema';
 
 const APP = 'tracker';
@@ -50,6 +51,7 @@ export async function restoreBackup(raw: unknown): Promise<void> {
       if (Array.isArray(rows) && rows.length) await t.bulkAdd(rows);
     }
   });
+  await backfillSnapshots();
 }
 
 export const lastBackupAt = () => Number(store.get(LAST)) || null;

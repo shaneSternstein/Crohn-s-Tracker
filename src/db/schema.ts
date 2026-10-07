@@ -25,6 +25,7 @@ export class TrackerDB extends Dexie {
         .filter((p) => p.type === 'symptom' && ['Diarrhea', 'Constipation', 'Urgency'].includes(p.label))
         .delete(),
     );
+    this.version(3).stores({ entries: '++id, type, start, end, *ingredientIds' });
   }
 }
 

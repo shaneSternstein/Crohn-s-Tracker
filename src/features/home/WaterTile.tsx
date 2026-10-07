@@ -14,21 +14,30 @@ export default function WaterTile() {
   const [open, setOpen] = useState(false);
   const [custom, setCustom] = useState(false);
   const [amount, setAmount] = useState(1.5);
+  const [err, setErr] = useState('');
   const total = useLiveQuery(() => hydrationTotal(...dayRange()), [], 0);
   const last = useLiveQuery(() => lastWater(), [], undefined);
 
+  const fail = (e: unknown) => setErr(e instanceof Error ? e.message : 'Could not save.');
+  const quick = () => Promise.resolve(add(1)).then(() => setErr(''), fail);
   const act = (fn: () => unknown) => async () => {
-    await fn();
-    setOpen(false);
-    setCustom(false);
+    try {
+      await fn();
+      setErr('');
+      setOpen(false);
+      setCustom(false);
+    } catch (e) {
+      fail(e);
+    }
   };
 
   return (
     <>
       <div className="tile alt water-tile">
-        <button className="water-main" onClick={() => add(1)}>
+        <button className="water-main" onClick={quick}>
           <span>Water</span>
           <small>{cupsLabel(toCups(total))} today, tap +1</small>
+          {err && <small role="alert" className="error">{err}</small>}
         </button>
         <button className="water-more" aria-label="More water options" onClick={() => setOpen(true)}>⋯</button>
       </div>

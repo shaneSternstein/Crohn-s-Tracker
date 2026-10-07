@@ -1,36 +1,51 @@
 import { useEffect, useState } from 'react';
-import { exportBackup, inspectBackup, lastBackupAt, restoreBackup } from '../../lib/backup';
+import { canShareFile, downloadBackup, inspectBackup, lastBackupAt, makeBackupFile, restoreBackup, shareBackup } from '../../lib/backup';
 import { Screen } from '../../ui/bits';
+
+const errText = (e: unknown) => (e instanceof Error ? `${e.name}: ${e.message}` : 'Unknown error.');
 
 export default function Settings() {
   const [last, setLast] = useState(lastBackupAt());
+  const [file, setFile] = useState<File | null>(null);
   const [msg, setMsg] = useState('');
   const [persisted, setPersisted] = useState<boolean | null>(null);
 
   useEffect(() => {
     navigator.storage?.persisted?.().then(setPersisted);
+    makeBackupFile().then(setFile).catch((e) => setMsg(`Could not prepare backup. ${errText(e)}`));
   }, []);
 
-  const doExport = async () => {
+  const download = () => {
     try {
-      const r = await exportBackup();
+      downloadBackup(file!);
       setLast(lastBackupAt());
-      setMsg(r === 'cancelled' ? '' : 'Backup saved.');
+      setMsg('Backup downloaded. Check your Downloads folder.');
     } catch (e) {
-      setMsg(`Export failed: ${(e as Error).message}`);
+      setMsg(`Download failed. ${errText(e)}`);
     }
   };
 
-  const doImport = async (file: File) => {
+  const share = async () => {
     try {
-      const raw = JSON.parse(await file.text());
+      if (await shareBackup(file!)) {
+        setLast(lastBackupAt());
+        setMsg('Backup shared.');
+      }
+    } catch (e) {
+      setMsg(`Share failed. Use Download instead. ${errText(e)}`);
+    }
+  };
+
+  const restore = async (f: File) => {
+    try {
+      const raw = JSON.parse(await f.text());
       const info = inspectBackup(raw);
       const when = new Date(info.exportedAt).toLocaleString();
       if (!window.confirm(`Replace all data in this app with the backup from ${when} (${info.entries} entries)? This can't be undone.`)) return;
       await restoreBackup(raw);
       setMsg('Backup restored.');
     } catch (e) {
-      setMsg(e instanceof SyntaxError ? 'This file is not a Tracker backup.' : (e as Error).message);
+      setMsg(e instanceof SyntaxError ? 'This file is not a Tracker backup.' : `Import failed. ${errText(e)}`);
     }
   };
 
@@ -39,7 +54,8 @@ export default function Settings() {
       <section className="section">
         <h2>Backup</h2>
         <p className="empty">{last ? `Last backup: ${new Date(last).toLocaleString()}` : 'No backup yet.'}</p>
-        <button className="btn" onClick={doExport}>Export backup</button>
+        <button className="btn" disabled={!file} onClick={download}>Download backup</button>
+        {file && canShareFile(file) && <button className="btn ghost" onClick={share}>Share backup</button>}
         <label className="btn ghost">
           Import backup
           <input
@@ -49,7 +65,7 @@ export default function Settings() {
             onChange={(e) => {
               const f = e.target.files?.[0];
               e.target.value = '';
-              if (f) doImport(f);
+              if (f) restore(f);
             }}
           />
         </label>
@@ -63,7 +79,18 @@ export default function Settings() {
         </p>
         <p>Persistent storage: {persisted === null ? 'unknown' : persisted ? 'granted' : 'not granted'}</p>
         {persisted === false && (
-          <button className="btn ghost" onClick={() => navigator.storage.persist().then(setPersisted)}>Request persistent storage</button>
+          <>
+            <button
+              className="btn ghost"
+              onClick={async () => {
+                const ok = await navigator.storage.persist();
+                setPersisted(ok);
+                if (!ok) setMsg('Denied by the browser. Install the app and use it regularly, then check again.');
+              }}
+            >
+              Request persistent storage
+            </button>
+          </>
         )}
       </section>
     </Screen>

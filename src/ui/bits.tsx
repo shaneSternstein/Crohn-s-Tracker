@@ -15,6 +15,9 @@ export const Screen = ({ title, children, onBack }: { title: string; children: R
   </main>
 );
 
+export const ErrorText = ({ message }: { message: string }) =>
+  message ? <p role="alert" className="error">{message}</p> : null;
+
 interface ChipsProps<T> {
   options: readonly T[];
   selected: readonly T[];

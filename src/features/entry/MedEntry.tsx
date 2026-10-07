@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { addEntry, recentItems, saveItem } from '../../db/repo';
 import type { Item } from '../../domain/types';
-import { Chips } from '../../ui/bits';
+import { Chips, ErrorText } from '../../ui/bits';
+import { useSaving } from '../../ui/useSaving';
 import { TimeField } from '../../ui/TimeField';
 
 export default function MedEntry() {
   const nav = useNavigate();
+  const { busy, error, run } = useSaving();
   const [at, setAt] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [dose, setDose] = useState('');
@@ -29,7 +31,7 @@ export default function MedEntry() {
           <Chips
             options={meds.map((m) => m.id!)}
             selected={[]}
-            onToggle={log}
+            onToggle={(id) => run(() => log(id))}
             render={(id) => {
               const m = meds.find((x) => x.id === id)!;
               return m.dose ? `${m.name} ${m.dose}` : m.name;
@@ -40,7 +42,8 @@ export default function MedEntry() {
       <h2>New</h2>
       <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
       <input placeholder="Default dose (e.g. 200 mg)" value={dose} onChange={(e) => setDose(e.target.value)} />
-      <button className="btn" disabled={!name.trim()} onClick={create}>Save and log</button>
+      <button className="btn" disabled={!name.trim() || busy} onClick={() => run(create)}>{busy ? 'Saving…' : 'Save and log'}</button>
+      <ErrorText message={error} />
     </>
   );
 }

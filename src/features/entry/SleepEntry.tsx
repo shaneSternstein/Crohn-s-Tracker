@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logSleep } from '../../db/repo';
+import { ErrorText } from '../../ui/bits';
+import { useSaving } from '../../ui/useSaving';
 
 const at = (hhmm: string, dayOffset: number) => {
   const [h, m] = hhmm.split(':').map(Number);
@@ -12,6 +14,7 @@ const at = (hhmm: string, dayOffset: number) => {
 
 export default function SleepEntry() {
   const nav = useNavigate();
+  const { busy, error, run } = useSaving();
   const [bed, setBed] = useState('23:00');
   const [wake, setWake] = useState('07:00');
   const wakeAt = at(wake, 0);
@@ -25,7 +28,8 @@ export default function SleepEntry() {
       <h2>Wake time</h2>
       <input type="time" value={wake} onChange={(e) => setWake(e.target.value)} />
       <p>{hours} h</p>
-      <button className="btn" onClick={async () => { await logSleep(bedAt, wakeAt); nav('/'); }}>Save</button>
+      <button className="btn" disabled={busy} onClick={() => run(async () => { await logSleep(bedAt, wakeAt); nav('/'); })}>{busy ? 'Saving…' : 'Save'}</button>
+      <ErrorText message={error} />
     </>
   );
 }

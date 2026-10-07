@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { addEntry, recentItems, saveItem } from '../../db/repo';
 import type { IngredientLine, Item } from '../../domain/types';
-import { Chips } from '../../ui/bits';
+import { Chips, ErrorText } from '../../ui/bits';
+import { useSaving } from '../../ui/useSaving';
 import { TimeField } from '../../ui/TimeField';
 import IngredientList from './IngredientList';
 
 export default function ItemEntry({ kind }: { kind: 'food' | 'drink' }) {
   const nav = useNavigate();
+  const { busy, error, run } = useSaving();
   const [at, setAt] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [lines, setLines] = useState<IngredientLine[]>([]);
@@ -34,13 +36,14 @@ export default function ItemEntry({ kind }: { kind: 'food' | 'drink' }) {
       {saved.length > 0 && (
         <>
           <h2>Saved</h2>
-          <Chips options={saved.map((s) => s.id!)} selected={[]} onToggle={log} render={(id) => saved.find((s) => s.id === id)!.name} />
+          <Chips options={saved.map((s) => s.id!)} selected={[]} onToggle={(id) => run(() => log(id))} render={(id) => saved.find((s) => s.id === id)!.name} />
         </>
       )}
       <h2>New</h2>
       <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
       <IngredientList lines={lines} onChange={setLines} saved={saved} />
-      <button className="btn" disabled={!name.trim()} onClick={create}>Save and log</button>
+      <button className="btn" disabled={!name.trim() || busy} onClick={() => run(create)}>{busy ? 'Saving…' : 'Save and log'}</button>
+      <ErrorText message={error} />
     </>
   );
 }

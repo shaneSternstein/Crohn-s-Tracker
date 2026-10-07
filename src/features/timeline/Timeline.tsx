@@ -6,9 +6,11 @@ import { endEntry, entriesBetween } from '../../db/repo';
 import { COLUMN_COLOR, COLUMN_LABEL, COLUMN_OF, type Column } from '../../domain/columns';
 import type { Entry, Item } from '../../domain/types';
 import { HOUR, dayRange, startOfDay } from '../../lib/time';
+import { ingredientText } from '../../domain/describe';
 import { labelOf } from './label';
 import { layoutColumn } from './layout';
 
+const EMPTY = { items: new Map<number, Item>(), names: new Map<number, string>() };
 const HH = 56; // px per hour
 const COLS: Column[] = ['intake', 'activity', 'health'];
 const WAKING_START = 6.5; // hours; initial scroll position
@@ -35,15 +37,21 @@ export default function Timeline() {
   const scroller = useRef<HTMLDivElement>(null);
 
   const entries = useLiveQuery(() => entriesBetween(from, to), [from, to], [] as Entry[]);
-  const items = useLiveQuery(
+  const lookup = useLiveQuery(
     async () => {
       const ids = [...new Set(entries.flatMap((e) => (e.itemId !== undefined ? [e.itemId] : [])))];
-      const rows = await db.items.bulkGet(ids);
-      return new Map(rows.flatMap((i) => (i ? [[i.id!, i] as const] : [])));
+      const direct = (await db.items.bulkGet(ids)).flatMap((i) => (i ? [i] : []));
+      const childIds = [...new Set(direct.flatMap((i) => i.components.flatMap((c) => (c.itemId !== undefined ? [c.itemId] : []))))];
+      const children = (await db.items.bulkGet(childIds)).flatMap((i) => (i ? [i] : []));
+      const items = new Map([...direct, ...children].map((i) => [i.id!, i] as const));
+      const ingIds = [...new Set([...items.values()].flatMap((i) => i.components.flatMap((c) => (c.ingredientId !== undefined ? [c.ingredientId] : []))))];
+      const names = new Map((await db.ingredients.bulkGet(ingIds)).flatMap((g) => (g ? [[g.id!, g.name] as const] : [])));
+      return { items, names };
     },
     [entries],
-    new Map<number, Item>(),
+    EMPTY,
   );
+  const { items, names } = lookup;
 
   useEffect(() => {
     if (view === 'day' && scroller.current) scroller.current.scrollTop = WAKING_START * HH;
@@ -119,7 +127,10 @@ export default function Timeline() {
           {entries.map((e) => (
             <li key={e.id} className="li" style={{ '--c': COLUMN_COLOR[COLUMN_OF[e.type]] } as CSSProperties}>
               <time>{fmt(e.start)}</time>
-              <Link className="grow row-link" to={`/edit/${e.id}`}>{labelOf(e, items)}{e.ongoing && ', ongoing'}</Link>
+              <Link className="grow row-link" to={`/edit/${e.id}`}>
+                <span>{labelOf(e, items)}{e.ongoing && ', ongoing'}</span>
+                {ingredientText(e, items, names) && <small className="sub">{ingredientText(e, items, names)}</small>}
+              </Link>
               {e.ongoing && <button className="chip" onClick={() => endEntry(e.id!)}>End</button>}
             </li>
           ))}

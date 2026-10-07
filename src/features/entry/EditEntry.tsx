@@ -3,7 +3,8 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/schema';
 import { deleteEntry } from '../../db/repo';
-import { Screen } from '../../ui/bits';
+import { ErrorText, Screen } from '../../ui/bits';
+import { useSaving } from '../../ui/useSaving';
 import EventEntry from './EventEntry';
 import ItemEntryEdit from './ItemEntryEdit';
 
@@ -11,6 +12,7 @@ export default function EditEntry() {
   const { id } = useParams();
   const nav = useNavigate();
   const [gone, setGone] = useState(false);
+  const { busy, error, run } = useSaving();
   // undefined = loading, null = not found
   const entry = useLiveQuery(async () => (await db.entries.get(Number(id))) ?? null, [id]);
   const back = () => nav(-1);
@@ -22,8 +24,13 @@ export default function EditEntry() {
   const remove = async () => {
     if (!window.confirm('Delete this entry?')) return;
     setGone(true);
-    await deleteEntry(entry.id!);
-    back();
+    try {
+      await deleteEntry(entry.id!);
+      back();
+    } catch (e) {
+      setGone(false);
+      throw e;
+    }
   };
 
   return (
@@ -33,7 +40,8 @@ export default function EditEntry() {
       ) : (
         <EventEntry key={entry.id} type={entry.type} entry={entry} onDone={back} />
       )}
-      <button className="btn ghost" onClick={remove}>Delete entry</button>
+      <button className="btn ghost" disabled={busy} onClick={() => run(remove)}>Delete entry</button>
+      <ErrorText message={error} />
     </Screen>
   );
 }

@@ -1,4 +1,5 @@
 import { db } from './schema';
+import { formatLine } from '../domain/describe';
 import { ML_PER_CUP } from '../domain/hydration';
 import { flattenIngredientIds } from '../domain/recipes';
 import type {
@@ -56,6 +57,19 @@ export function recentItems(kind?: ItemKind, limit = 12): Promise<Item[]> {
 export function searchItems(query: string, limit = 20): Promise<Item[]> {
   const q = nameKey(query);
   return db.items.filter((i) => nameKey(i.name).includes(q)).limit(limit).toArray();
+}
+
+/** Display lines for an item's components, e.g. ["1.5 cup flour", "2 eggs"]. */
+export async function ingredientLines(itemId: number): Promise<string[]> {
+  const item = await db.items.get(itemId);
+  if (!item) return [];
+  const [ings, kids] = await Promise.all([
+    db.ingredients.bulkGet(item.components.flatMap((c) => (c.ingredientId !== undefined ? [c.ingredientId] : []))),
+    db.items.bulkGet(item.components.flatMap((c) => (c.itemId !== undefined ? [c.itemId] : []))),
+  ]);
+  const names = new Map(ings.flatMap((g) => (g ? [[g.id!, g.name] as const] : [])));
+  const items = new Map(kids.flatMap((i) => (i ? [[i.id!, i] as const] : [])));
+  return item.components.map((c) => formatLine(c, names, items));
 }
 
 export const itemIngredientIds = (item: Item) => flattenIngredientIds(item, getItem);

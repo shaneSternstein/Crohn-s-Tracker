@@ -6,7 +6,8 @@ import { addEntry, updateEntry } from '../../db/repo';
 import { BRISTOL_INFO } from '../../domain/bristol';
 import type { Bristol, Entry, Preset, Severity } from '../../domain/types';
 import { MIN } from '../../lib/time';
-import { Chips } from '../../ui/bits';
+import { Chips, ErrorText } from '../../ui/bits';
+import { useSaving } from '../../ui/useSaving';
 import { TimeField } from '../../ui/TimeField';
 
 type Kind = 'symptom' | 'activity' | 'stool';
@@ -27,6 +28,7 @@ interface Props {
 /** Symptom, activity, and stool entry. Create mode logs all selected chips; edit mode is single-select. */
 export default function EventEntry({ type, entry, onDone }: Props) {
   const nav = useNavigate();
+  const { busy, error, run } = useSaving();
   const editing = entry !== undefined;
   const isStool = type === 'stool';
   const single = editing && !isStool; // symptom/activity edits change one entry's label
@@ -119,9 +121,10 @@ export default function EventEntry({ type, entry, onDone }: Props) {
           {badEnd && <p className="empty">End time must be after the start time.</p>}
         </>
       )}
-      <button className="btn" disabled={badEnd || (isStool ? !bristol : picked.length === 0)} onClick={save}>
-        {editing ? 'Save changes' : 'Save'}
+      <button className="btn" disabled={busy || badEnd || (isStool ? !bristol : picked.length === 0)} onClick={() => run(save)}>
+        {busy ? 'Saving…' : editing ? 'Save changes' : 'Save'}
       </button>
+      <ErrorText message={error} />
     </>
   );
 }

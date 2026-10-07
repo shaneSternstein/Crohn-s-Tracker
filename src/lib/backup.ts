@@ -57,27 +57,34 @@ const markBackedUp = () => store.set(LAST, String(Date.now()));
 export const ensureInstalledStamp = () => { if (!store.get(INSTALLED)) store.set(INSTALLED, String(Date.now())); };
 export const backupDue = () => Date.now() - (lastBackupAt() ?? (Number(store.get(INSTALLED)) || Date.now())) > WEEK;
 
-/** Shares the backup via the system share sheet when possible, otherwise downloads it. */
-export async function exportBackup(): Promise<'shared' | 'downloaded' | 'cancelled'> {
-  const blob = new Blob([JSON.stringify(await buildBackup())], { type: 'application/json' });
+/** Builds the file ahead of the tap so sharing starts inside the user gesture. */
+export async function makeBackupFile(): Promise<File> {
   const name = `tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
-  const file = new File([blob], name, { type: 'application/json' });
+  return new File([JSON.stringify(await buildBackup())], name, { type: 'application/json' });
+}
 
-  if (navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], title: 'Tracker backup' });
-    } catch (e) {
-      if ((e as DOMException).name === 'AbortError') return 'cancelled';
-      throw e;
-    }
-    markBackedUp();
-    return 'shared';
+export const canShareFile = (f: File) => !!navigator.canShare?.({ files: [f] });
+
+/** Returns false if the user dismissed the share sheet. Throws on other failures. */
+export async function shareBackup(f: File): Promise<boolean> {
+  try {
+    await navigator.share({ files: [f], title: 'Tracker backup' });
+  } catch (e) {
+    if ((e as DOMException).name === 'AbortError') return false;
+    throw e;
   }
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   markBackedUp();
-  return 'downloaded';
+  return true;
+}
+
+export function downloadBackup(f: File): void {
+  const url = URL.createObjectURL(f);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = f.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  markBackedUp();
 }

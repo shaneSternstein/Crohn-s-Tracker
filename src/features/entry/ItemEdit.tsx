@@ -4,7 +4,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/schema';
 import { recentItems, saveItem } from '../../db/repo';
 import type { IngredientLine, Item } from '../../domain/types';
-import { Screen } from '../../ui/bits';
+import { ErrorText, Screen } from '../../ui/bits';
+import { useSaving } from '../../ui/useSaving';
 import IngredientList from './IngredientList';
 
 interface Loaded { item: Item; lines: IngredientLine[]; saved: Item[] }
@@ -40,6 +41,7 @@ export default function ItemEdit() {
 
 function ItemForm({ item, lines: initial, saved, onDone }: Loaded & { onDone: () => void }) {
   const isMed = item.kind === 'medication';
+  const { busy, error, run } = useSaving();
   const [name, setName] = useState(item.name);
   const [dose, setDose] = useState(item.dose ?? '');
   const [lines, setLines] = useState(initial);
@@ -68,7 +70,8 @@ function ItemForm({ item, lines: initial, saved, onDone }: Loaded & { onDone: ()
       ) : (
         <IngredientList lines={lines} onChange={setLines} saved={saved} />
       )}
-      <button className="btn" disabled={!name.trim()} onClick={save}>Save changes</button>
+      <button className="btn" disabled={!name.trim() || busy} onClick={() => run(save)}>{busy ? 'Saving…' : 'Save changes'}</button>
+      <ErrorText message={error} />
     </>
   );
 }

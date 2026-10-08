@@ -53,8 +53,9 @@ export default function Settings() {
   return (
     <Screen title="Settings">
       <section className="section">
-        <h2>Saved items</h2>
-        <Link to="/manage" className="btn ghost">Manage saved items</Link>
+        <h2>Manage</h2>
+        <Link to="/manage" className="btn ghost">Saved items</Link>
+        <Link to="/chips" className="btn ghost">Chips (symptoms, activities, stool tags)</Link>
       </section>
 
       <section className="section">

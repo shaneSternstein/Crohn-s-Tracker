@@ -114,3 +114,9 @@ label.btn { cursor: pointer; }
 .cal-day[data-today='true'] { border-color: var(--terracotta); }
 .cal-day:disabled { opacity: .35; cursor: default; }
 .dot { position: absolute; left: 50%; bottom: 4px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--terracotta); }
+
+.grid { position: relative; }
+.sleep-band { position: absolute; left: 40px; right: 0; border-radius: 12px; background: color-mix(in srgb, var(--muted) 16%, transparent); pointer-events: none; }
+.sleep-tag { position: absolute; left: 46px; z-index: 3; font-size: .7rem; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--text); text-decoration: none; }
+.now-line { position: absolute; left: 34px; right: 0; height: 2px; background: var(--terracotta); z-index: 2; pointer-events: none; }
+.now-line::before { content: ''; position: absolute; left: -2px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--terracotta); }

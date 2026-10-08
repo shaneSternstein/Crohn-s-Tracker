@@ -75,6 +75,7 @@ export interface Preset {
   id?: number;
   type: 'symptom' | 'activity' | 'stool';
   label: string;
+  order?: number; // display order within a type; falls back to id
 }
 
 /** Editable row used by the ingredient list UI and the paste parser. */

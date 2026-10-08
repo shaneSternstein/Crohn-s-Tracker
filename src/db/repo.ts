@@ -2,7 +2,7 @@ import { db } from './schema';
 import { ML_PER_CUP } from '../domain/hydration';
 import { flattenIngredientIds } from '../domain/recipes';
 import type {
-  Component, Entry, HydrationLog, IngredientLine, Item, ItemKind, SleepLog,
+  Component, Entry, HydrationLog, IngredientLine, Item, ItemKind, Preset, SleepLog,
 } from '../domain/types';
 
 export const nameKey = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -215,6 +215,10 @@ export async function entriesBetween(from: number, to: number): Promise<Entry[]>
 /* ---------- Sleep & hydration ---------- */
 
 export const logSleep = (start: number, end: number) => db.sleep.add({ start, end });
+export const sleepOverlapping = (from: number, to: number): Promise<SleepLog[]> =>
+  db.sleep.where('start').below(to).filter((s) => s.end > from).toArray();
+export const updateSleep = (id: number, start: number, end: number) => db.sleep.update(id, { start, end });
+export const deleteSleep = (id: number) => db.sleep.delete(id);
 export const sleepBetween = (from: number, to: number): Promise<SleepLog[]> =>
   db.sleep.where('start').between(from, to).toArray();
 
@@ -228,3 +232,55 @@ export const hydrationBetween = (from: number, to: number): Promise<HydrationLog
   db.hydration.where('at').between(from, to).toArray();
 export const hydrationTotal = async (from: number, to: number) =>
   (await hydrationBetween(from, to)).reduce((sum, h) => sum + h.ml, 0);
+
+/* ---------- Chips (presets) ---------- */
+
+export async function presetsOf(type: Preset['type']): Promise<Preset[]> {
+  const rows = await db.presets.where('type').equals(type).toArray();
+  return rows.sort((a, b) => (a.order ?? a.id!) - (b.order ?? b.id!));
+}
+
+export async function addPreset(type: Preset['type'], label: string): Promise<number> {
+  const rows = await presetsOf(type);
+  const next = rows.length ? Math.max(...rows.map((r) => r.order ?? r.id!)) + 1 : 0;
+  return db.presets.add({ type, label: label.trim(), order: next });
+}
+
+export async function movePreset(id: number, dir: -1 | 1): Promise<void> {
+  const p = await db.presets.get(id);
+  if (!p) return;
+  const rows = await presetsOf(p.type);
+  const i = rows.findIndex((r) => r.id === id);
+  const j = i + dir;
+  if (j < 0 || j >= rows.length) return;
+  [rows[i], rows[j]] = [rows[j], rows[i]];
+  await db.transaction('rw', db.presets, async () => {
+    for (const [k, row] of rows.entries()) await db.presets.update(row.id!, { order: k });
+  });
+}
+
+export const countPresetUses = (p: Preset) =>
+  p.type === 'stool'
+    ? db.entries.filter((e) => e.type === 'stool' && !!e.tags?.includes(p.label)).count()
+    : db.entries.filter((e) => e.type === p.type && e.label === p.label).count();
+
+/** Renames a chip; optionally rewrites the label on past entries too. Throws ConstraintError on a duplicate. */
+export async function renamePreset(id: number, label: string, alsoEntries: boolean): Promise<void> {
+  const name = label.trim();
+  if (!name) return;
+  await db.transaction('rw', db.presets, db.entries, async () => {
+    const p = await db.presets.get(id);
+    if (!p) return;
+    await db.presets.update(id, { label: name });
+    if (!alsoEntries) return;
+    if (p.type === 'stool') {
+      await db.entries
+        .filter((e) => e.type === 'stool' && !!e.tags?.includes(p.label))
+        .modify((e) => { e.tags = e.tags!.map((t) => (t === p.label ? name : t)); });
+    } else {
+      await db.entries.filter((e) => e.type === p.type && e.label === p.label).modify({ label: name });
+    }
+  });
+}
+
+export const deletePreset = (id: number) => db.presets.delete(id);

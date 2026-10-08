@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../db/schema';
-import { addEntry, updateEntry } from '../../db/repo';
+import { addEntry, addPreset, endEntry, presetsOf, updateEntry } from '../../db/repo';
 import { BRISTOL_INFO } from '../../domain/bristol';
 import type { Bristol, Entry, Preset, Severity } from '../../domain/types';
 import { MIN } from '../../lib/time';
@@ -40,7 +39,7 @@ export default function EventEntry({ type, entry, onDone }: Props) {
   const [severity, setSeverity] = useState<Severity>(entry?.severity ?? 3);
   const [bristol, setBristol] = useState<Bristol | undefined>(entry?.bristol);
   const [custom, setCustom] = useState('');
-  const presets = useLiveQuery(() => db.presets.where('type').equals(type).toArray(), [type], [] as Preset[]);
+  const presets = useLiveQuery(() => presetsOf(type), [type], [] as Preset[]);
 
   const startMs = at ?? Date.now();
   const badEnd = endMode === 'at' && (endAt ?? Date.now()) <= startMs;
@@ -53,7 +52,7 @@ export default function EventEntry({ type, entry, onDone }: Props) {
   const addCustom = async () => {
     const label = custom.trim();
     if (!label) return;
-    await db.presets.add({ type, label }).catch(() => undefined); // unique [type+label]
+    await addPreset(type, label).catch(() => undefined); // unique [type+label]
     setPicked((p) => (single ? [label] : p.includes(label) ? p : [...p, label]));
     setCustom('');
   };
@@ -117,6 +116,15 @@ export default function EventEntry({ type, entry, onDone }: Props) {
         <>
           <h2>Duration</h2>
           <Chips options={END_MODES} selected={[endMode]} onToggle={chooseEnd} render={(m) => END_LABEL[m]} />
+          {entry?.ongoing && (
+            <button
+              className="btn ghost"
+              disabled={busy}
+              onClick={() => run(async () => { await endEntry(entry.id!); (onDone ?? (() => nav('/')))(); })}
+            >
+              End now
+            </button>
+          )}
           {endMode === 'at' && <TimeField label="Ended" value={endAt} onChange={setEndAt} />}
           {badEnd && <p className="empty">End time must be after the start time.</p>}
         </>

@@ -101,7 +101,10 @@ label.btn { cursor: pointer; }
 .check { display: flex; gap: 10px; align-items: center; }
 .screen .check input { width: auto; padding: 0; }
 
-.swipe { min-height: 60dvh; }
+.viewport { overflow: hidden; touch-action: pan-y; min-height: 60dvh; }
+.scroll { overflow-x: hidden; touch-action: pan-y; }
+.strip { display: flex; width: 300%; will-change: transform; }
+.panel { flex: 0 0 33.3333%; min-width: 0; }
 .arrow { display: none; }
 @media (pointer: fine) { .arrow { display: inline-block; } }
 .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }

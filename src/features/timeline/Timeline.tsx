@@ -1,27 +1,17 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../db/schema';
-import { endEntry, entriesBetween } from '../../db/repo';
-import { COLUMN_COLOR, COLUMN_LABEL, COLUMN_OF, type Column } from '../../domain/columns';
-import type { Entry, Item } from '../../domain/types';
-import { HOUR, dayRange, startOfDay } from '../../lib/time';
-import { ingredientText } from '../../domain/describe';
-import { useSwipe } from '../../ui/useSwipe';
+import { startOfDay } from '../../lib/time';
 import DatePicker from './DatePicker';
-import { labelOf } from './label';
-import { layoutColumn } from './layout';
+import DayPanel, { HH, WAKING_START } from './DayPanel';
 
-const EMPTY = { items: new Map<number, Item>(), names: new Map<number, string>() };
-const HH = 56; // px per hour
-const COLS: Column[] = ['intake', 'activity', 'health'];
-const WAKING_START = 6.5; // hours; initial scroll position
-const fmt = (t: number) => new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+const SLIDE_MS = 250;
 const shiftDay = (t: number, n: number) => {
   const d = new Date(t);
   d.setDate(d.getDate() + n);
   return d.getTime();
 };
+
+interface Gesture { id: number; x0: number; y0: number; lastX: number; lastT: number; v: number; mode: 'none' | 'h' | 'v' }
 
 export default function Timeline() {
   const [params, setParams] = useSearchParams();
@@ -35,119 +25,109 @@ export default function Timeline() {
     }, { replace: true });
   const setDay = (t: number) => update({ d: String(t) });
   const setView = (v: 'day' | 'list') => update({ v });
-  const [from, to] = dayRange(day);
-  const scroller = useRef<HTMLDivElement>(null);
-  const [picking, setPicking] = useState(false);
+
   const today = startOfDay();
-  const prev = () => setDay(shiftDay(day, -1));
-  const next = () => { if (day < today) setDay(shiftDay(day, 1)); };
-  const swipe = useSwipe(next, prev);
+  const days = [shiftDay(day, -1), day, shiftDay(day, 1)];
+  const [picking, setPicking] = useState(false);
+  const [shift, setShift] = useState({ x: 0, anim: false }); // strip offset in px from the centered day
+  const vp = useRef<HTMLDivElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
+  const busy = useRef(false);
+  const gesture = useRef<Gesture | null>(null);
+  const timer = useRef<number | undefined>(undefined);
+  const duration = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : SLIDE_MS;
 
-  const entries = useLiveQuery(() => entriesBetween(from, to), [from, to], [] as Entry[]);
-  const lookup = useLiveQuery(
-    async () => {
-      const ids = [...new Set(entries.flatMap((e) => (e.itemId !== undefined ? [e.itemId] : [])))];
-      const direct = (await db.items.bulkGet(ids)).flatMap((i) => (i ? [i] : []));
-      const comps = [...entries.flatMap((e) => e.components ?? []), ...direct.flatMap((i) => i.components)];
-      const childIds = [...new Set(comps.flatMap((c) => (c.itemId !== undefined ? [c.itemId] : [])))];
-      const children = (await db.items.bulkGet(childIds)).flatMap((i) => (i ? [i] : []));
-      const items = new Map([...direct, ...children].map((i) => [i.id!, i] as const));
-      const ingIds = [...new Set(comps.flatMap((c) => (c.ingredientId !== undefined ? [c.ingredientId] : [])))];
-      const names = new Map((await db.ingredients.bulkGet(ingIds)).flatMap((g) => (g ? [[g.id!, g.name] as const] : [])));
-      return { items, names };
-    },
-    [entries],
-    EMPTY,
-  );
-  const { items, names } = lookup;
-
+  // The strip re-centers on the new day before it is painted, so the slide ends without a jump.
+  useLayoutEffect(() => {
+    setShift({ x: 0, anim: false });
+    busy.current = false;
+  }, [day]);
   useEffect(() => {
     if (view === 'day' && scroller.current) scroller.current.scrollTop = WAKING_START * HH;
-  }, [view, day]);
+  }, [view]);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
 
-  const now = Date.now();
-  const y = (t: number) => ((t - from) / HOUR) * HH;
+  /** step 1 = next day (strip moves left), -1 = previous day. */
+  const slide = (step: 1 | -1) => {
+    if (busy.current || (step === 1 && day >= today)) return;
+    busy.current = true;
+    const w = vp.current?.clientWidth ?? 0;
+    setShift({ x: step === 1 ? -w : w, anim: true });
+    timer.current = window.setTimeout(() => setDay(shiftDay(day, step)), duration);
+  };
+
+  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse' || busy.current) return;
+    gesture.current = { id: e.pointerId, x0: e.clientX, y0: e.clientY, lastX: e.clientX, lastT: e.timeStamp, v: 0, mode: 'none' };
+  };
+  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    const s = gesture.current;
+    if (!s || s.id !== e.pointerId || s.mode === 'v') return;
+    const dx = e.clientX - s.x0;
+    const dy = e.clientY - s.y0;
+    if (s.mode === 'none') {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dx) < Math.abs(dy) * 1.2) { s.mode = 'v'; return; } // vertical scroll: leave it alone
+      s.mode = 'h';
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+    const dt = e.timeStamp - s.lastT;
+    if (dt > 0) s.v = (e.clientX - s.lastX) / dt;
+    s.lastX = e.clientX;
+    s.lastT = e.timeStamp;
+    setShift({ x: dx > 0 || day < today ? dx : dx * 0.3, anim: false }); // resistance when there is no next day
+  };
+  const onPointerEnd = (e: PointerEvent<HTMLDivElement>, cancelled: boolean) => {
+    const s = gesture.current;
+    gesture.current = null;
+    if (!s || s.mode !== 'h') return;
+    const w = vp.current?.clientWidth ?? 1;
+    const dx = e.clientX - s.x0;
+    if (!cancelled) {
+      if (dx < 0 && day < today && (-dx > w * 0.25 || s.v < -0.5)) return slide(1);
+      if (dx > 0 && (dx > w * 0.25 || s.v > 0.5)) return slide(-1);
+    }
+    setShift({ x: 0, anim: true }); // spring back
+  };
+
+  const strip = (
+    <div
+      className="strip"
+      style={{
+        transform: `translate3d(calc(-100% / 3 + ${shift.x}px), 0, 0)`,
+        transition: shift.anim ? `transform ${duration}ms cubic-bezier(.2, .8, .2, 1)` : 'none',
+      }}
+    >
+      {days.map((d) => <DayPanel key={d} day={d} view={view} />)}
+    </div>
+  );
 
   return (
     <main className="screen">
       <div className="tl-head">
         <Link to="/" className="back" aria-label="Home">‹</Link>
-        <button className="chip arrow" aria-label="Previous day" onClick={prev}>←</button>
+        <button className="chip arrow" aria-label="Previous day" onClick={() => slide(-1)}>←</button>
         <button className="chip" aria-label="Pick a date" onClick={() => setPicking(true)}>
           {new Date(day).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
         </button>
-        <button className="chip arrow" aria-label="Next day" disabled={day >= today} onClick={next}>→</button>
+        <button className="chip arrow" aria-label="Next day" disabled={day >= today} onClick={() => slide(1)}>→</button>
         <div className="seg" role="group">
           <button aria-pressed={view === 'day'} onClick={() => setView('day')}>Day</button>
           <button aria-pressed={view === 'list'} onClick={() => setView('list')}>List</button>
         </div>
       </div>
 
-      <div className="swipe" {...swipe}>
-      {view === 'day' ? (
-        <div className="scroll" ref={scroller}>
-          <div className="cols">
-            <span />
-            {COLS.map((c) => <span key={c}>{COLUMN_LABEL[c]}</span>)}
-          </div>
-          <div className="grid" style={{ '--hh': `${HH}px`, height: 24 * HH } as CSSProperties}>
-            <div className="hours">
-              {Array.from({ length: 24 }, (_, h) => (
-                <span key={h} style={{ top: h * HH + (h === 0 ? 8 : 0) }}>
-                  {new Date(2000, 0, 1, h).toLocaleTimeString([], { hour: 'numeric' })}
-                </span>
-              ))}
-            </div>
-            {COLS.map((c) => {
-              const rows = entries
-                .filter((e) => COLUMN_OF[e.type] === c)
-                .map((e) => ({ item: e, start: Math.max(e.start, from), end: Math.min(e.ongoing ? now : (e.end ?? e.start), to) }));
-              const { blocks, overflow } = layoutColumn(rows, HOUR / 2);
-              return (
-                <div key={c} className="col">
-                  {blocks.map((b) => (
-                    <Link
-                      key={b.item.id}
-                      to={`/edit/${b.item.id}`}
-                      className="blk"
-                      style={{
-                        top: y(b.start),
-                        height: y(b.end) - y(b.start),
-                        left: `${(b.lane / b.lanes) * 100}%`,
-                        width: `${100 / b.lanes}%`,
-                        background: COLUMN_COLOR[c],
-                      }}
-                    >
-                      {labelOf(b.item, items)}
-                    </Link>
-                  ))}
-                  {overflow.map((o) => (
-                    <button key={o.at} className="more" style={{ top: y(o.at) }} onClick={() => setView('list')}>
-                      +{o.count}
-                    </button>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : entries.length === 0 ? (
-        <p className="empty">Nothing logged for this day.</p>
-      ) : (
-        <ul className="list">
-          {entries.map((e) => (
-            <li key={e.id} className="li" style={{ '--c': COLUMN_COLOR[COLUMN_OF[e.type]] } as CSSProperties}>
-              <time>{fmt(e.start)}</time>
-              <Link className="grow row-link" to={`/edit/${e.id}`}>
-                <span>{labelOf(e, items)}{e.ongoing && ', ongoing'}</span>
-                {ingredientText(e, items, names) && <small className="sub">{ingredientText(e, items, names)}</small>}
-              </Link>
-              {e.ongoing && <button className="chip" onClick={() => endEntry(e.id!)}>End</button>}
-            </li>
-          ))}
-        </ul>
-      )}
+      <div
+        className="viewport"
+        ref={vp}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={(e) => onPointerEnd(e, false)}
+        onPointerCancel={(e) => onPointerEnd(e, true)}
+      >
+        {view === 'day' ? <div className="scroll" ref={scroller}>{strip}</div> : strip}
       </div>
+
       {picking && <DatePicker value={day} onPick={(d) => { setDay(d); setPicking(false); }} onClose={() => setPicking(false)} />}
     </main>
   );

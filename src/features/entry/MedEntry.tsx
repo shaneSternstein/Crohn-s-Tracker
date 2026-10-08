@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { addEntry, recentItems, saveItem } from '../../db/repo';
 import type { Item } from '../../domain/types';
+import { matchItems } from '../../lib/search';
 import { Chips, ErrorText } from '../../ui/bits';
 import { useSaving } from '../../ui/useSaving';
 import { TimeField } from '../../ui/TimeField';
+
+const NO_NAMES = new Map<number, string>();
 
 export default function MedEntry() {
   const nav = useNavigate();
@@ -13,7 +16,9 @@ export default function MedEntry() {
   const [at, setAt] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [dose, setDose] = useState('');
-  const meds = useLiveQuery(() => recentItems('medication', 40), [], [] as Item[]);
+  const meds = useLiveQuery(() => recentItems('medication', 200), [], [] as Item[]);
+  const [q, setQ] = useState('');
+  const shown = matchItems(meds, q, NO_NAMES);
 
   const log = async (itemId: number) => {
     await addEntry({ type: 'medication', start: at ?? Date.now(), ongoing: false, itemId });
@@ -28,8 +33,9 @@ export default function MedEntry() {
       {meds.length > 0 && (
         <>
           <h2>Saved</h2>
+          {meds.length > 8 && <input placeholder="Search saved" value={q} onChange={(e) => setQ(e.target.value)} />}
           <Chips
-            options={meds.map((m) => m.id!)}
+            options={shown.map((m) => m.id!)}
             selected={[]}
             onToggle={(id) => run(() => log(id))}
             render={(id) => {

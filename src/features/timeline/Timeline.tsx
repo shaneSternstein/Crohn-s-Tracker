@@ -1,4 +1,4 @@
-import { useEffect, useRef, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/schema';
@@ -7,6 +7,8 @@ import { COLUMN_COLOR, COLUMN_LABEL, COLUMN_OF, type Column } from '../../domain
 import type { Entry, Item } from '../../domain/types';
 import { HOUR, dayRange, startOfDay } from '../../lib/time';
 import { ingredientText } from '../../domain/describe';
+import { useSwipe } from '../../ui/useSwipe';
+import DatePicker from './DatePicker';
 import { labelOf } from './label';
 import { layoutColumn } from './layout';
 
@@ -35,6 +37,11 @@ export default function Timeline() {
   const setView = (v: 'day' | 'list') => update({ v });
   const [from, to] = dayRange(day);
   const scroller = useRef<HTMLDivElement>(null);
+  const [picking, setPicking] = useState(false);
+  const today = startOfDay();
+  const prev = () => setDay(shiftDay(day, -1));
+  const next = () => { if (day < today) setDay(shiftDay(day, 1)); };
+  const swipe = useSwipe(next, prev);
 
   const entries = useLiveQuery(() => entriesBetween(from, to), [from, to], [] as Entry[]);
   const lookup = useLiveQuery(
@@ -65,15 +72,18 @@ export default function Timeline() {
     <main className="screen">
       <div className="tl-head">
         <Link to="/" className="back" aria-label="Home">‹</Link>
-        <button className="chip" aria-label="Previous day" onClick={() => setDay(shiftDay(day, -1))}>←</button>
-        <strong>{new Date(day).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</strong>
-        <button className="chip" aria-label="Next day" onClick={() => setDay(shiftDay(day, 1))}>→</button>
+        <button className="chip arrow" aria-label="Previous day" onClick={prev}>←</button>
+        <button className="chip" aria-label="Pick a date" onClick={() => setPicking(true)}>
+          {new Date(day).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+        </button>
+        <button className="chip arrow" aria-label="Next day" disabled={day >= today} onClick={next}>→</button>
         <div className="seg" role="group">
           <button aria-pressed={view === 'day'} onClick={() => setView('day')}>Day</button>
           <button aria-pressed={view === 'list'} onClick={() => setView('list')}>List</button>
         </div>
       </div>
 
+      <div className="swipe" {...swipe}>
       {view === 'day' ? (
         <div className="scroll" ref={scroller}>
           <div className="cols">
@@ -137,6 +147,8 @@ export default function Timeline() {
           ))}
         </ul>
       )}
+      </div>
+      {picking && <DatePicker value={day} onPick={(d) => { setDay(d); setPicking(false); }} onClose={() => setPicking(false)} />}
     </main>
   );
 }

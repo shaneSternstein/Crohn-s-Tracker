@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useIngredientNames } from '../../db/hooks';
 import { linesFromComponents, logFood, nameKey, recentItems, saveItem } from '../../db/repo';
 import type { IngredientLine, Item, ItemKind } from '../../domain/types';
+import { matchItems } from '../../lib/search';
 import { ErrorText } from '../../ui/bits';
 import { TimeField } from '../../ui/TimeField';
 import { useSaving } from '../../ui/useSaving';
@@ -26,6 +28,8 @@ export default function ItemEntry({ kind }: { kind: 'food' | 'drink' }) {
   const [tpl, setTpl] = useState<Item | null>(null);
   const [base, setBase] = useState('');
   const [q, setQ] = useState('');
+  const [all, setAll] = useState(false);
+  const names = useIngredientNames();
   const saved = useLiveQuery(
     async () =>
       (await recentItems(undefined, 200)).filter((i) => (kind === 'drink' ? i.kind === 'drink' : i.kind === 'food' || i.kind === 'recipe')),
@@ -59,7 +63,8 @@ export default function ItemEntry({ kind }: { kind: 'food' | 'drink' }) {
     await log(tpl!.id!, false);
   };
 
-  const shown = saved.filter((s) => nameKey(s.name).includes(nameKey(q)));
+  const matches = matchItems(saved, q, names);
+  const shown = q.trim() || all ? matches : matches.slice(0, 8);
   const date = (t: number) => new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
   return (
@@ -69,7 +74,7 @@ export default function ItemEntry({ kind }: { kind: 'food' | 'drink' }) {
       {saved.length > 0 && (
         <>
           <h2>Saved, tap to use as a starting point</h2>
-          {saved.length > 8 && <input placeholder="Search saved" value={q} onChange={(e) => setQ(e.target.value)} />}
+          <input placeholder="Search saved items or ingredients" value={q} onChange={(e) => setQ(e.target.value)} />
           <div className="saved-list">
             {shown.map((s) => (
               <button key={s.id} type="button" className="saved-tile" aria-pressed={tpl?.id === s.id} onClick={() => (tpl?.id === s.id ? clear() : void pick(s))}>
@@ -78,6 +83,11 @@ export default function ItemEntry({ kind }: { kind: 'food' | 'drink' }) {
               </button>
             ))}
           </div>
+          {q.trim() && shown.length === 0 && <p className="empty">No matches. Use the New form below.</p>}
+          {!q.trim() && !all && matches.length > 8 && (
+            <button className="btn ghost" onClick={() => setAll(true)}>Show all ({matches.length})</button>
+          )}
+          <Link to="/manage" className="sub">Manage saved items</Link>
         </>
       )}
 

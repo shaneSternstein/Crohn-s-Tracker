@@ -29,6 +29,7 @@ export interface Item {
   name: string;
   barcode?: string;
   dose?: string; // default dose, medications only
+  archived?: boolean; // hidden from saved lists; history keeps using it
   components: Component[];
   ingredientIds: number[]; // direct ingredient ids, indexed for lookups
   createdAt: number;

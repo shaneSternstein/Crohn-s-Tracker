@@ -3,6 +3,7 @@ import AddRoute from './features/entry/AddRoute';
 import EditEntry from './features/entry/EditEntry';
 import ItemEdit from './features/entry/ItemEdit';
 import Home from './features/home/Home';
+import ManageItems from './features/settings/ManageItems';
 import Settings from './features/settings/Settings';
 import Timeline from './features/timeline/Timeline';
 
@@ -10,6 +11,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/manage" element={<ManageItems />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/timeline" element={<Timeline />} />
       <Route path="/add/:type" element={<AddRoute />} />

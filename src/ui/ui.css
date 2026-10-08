@@ -100,3 +100,14 @@ label.btn { cursor: pointer; }
 .sticky-actions { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 8px; background: var(--bg); padding: 8px 0; z-index: 2; }
 .check { display: flex; gap: 10px; align-items: center; }
 .screen .check input { width: auto; padding: 0; }
+
+.swipe { min-height: 60dvh; }
+.arrow { display: none; }
+@media (pointer: fine) { .arrow { display: inline-block; } }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.cal-wd { color: var(--muted); font-size: .75rem; }
+.cal-day { position: relative; border: 2px solid transparent; background: var(--surface-2); border-radius: 12px; padding: 10px 0; font-size: .95rem; }
+.cal-day[aria-pressed='true'] { background: var(--sage); color: var(--ink); border-color: var(--ink); }
+.cal-day[data-today='true'] { border-color: var(--terracotta); }
+.cal-day:disabled { opacity: .35; cursor: default; }
+.dot { position: absolute; left: 50%; bottom: 4px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--terracotta); }

@@ -61,7 +61,7 @@ export function saveItem(draft: ItemDraft, id?: number): Promise<number> {
   return db.transaction('rw', db.items, db.ingredients, async () => {
     const name = draft.name.trim();
     const key = nameKey(name);
-    const dupe = await db.items.filter((i) => nameKey(i.name) === key && i.id !== id).first();
+    const dupe = await db.items.filter((i) => !i.archived && nameKey(i.name) === key && i.id !== id).first();
     if (dupe) throw new Error(`An item named "${name}" already exists. Choose a different name.`);
 
     const { components, direct } = await resolveLines(draft.lines);
@@ -79,14 +79,46 @@ export function saveItem(draft: ItemDraft, id?: number): Promise<number> {
 export const getItem = (id: number) => db.items.get(id);
 export const getItemByBarcode = (code: string) => db.items.where('barcode').equals(code).first();
 
+/** Most recently used visible items (hidden ones are excluded). */
 export function recentItems(kind?: ItemKind, limit = 12): Promise<Item[]> {
-  const rows = db.items.orderBy('lastUsedAt').reverse();
-  return (kind ? rows.filter((i) => i.kind === kind) : rows).limit(limit).toArray();
+  return db.items
+    .orderBy('lastUsedAt')
+    .reverse()
+    .filter((i) => !i.archived && (!kind || i.kind === kind))
+    .limit(limit)
+    .toArray();
 }
 
 export function searchItems(query: string, limit = 20): Promise<Item[]> {
   const q = nameKey(query);
-  return db.items.filter((i) => nameKey(i.name).includes(q)).limit(limit).toArray();
+  return db.items.filter((i) => !i.archived && nameKey(i.name).includes(q)).limit(limit).toArray();
+}
+
+/** How many past entries and recipes reference an item. */
+export async function itemUsage(id: number) {
+  const entries = await db.entries.filter((e) => e.itemId === id).count();
+  const recipes = await db.items.filter((i) => i.id !== id && i.components.some((c) => c.itemId === id)).count();
+  return { entries, recipes };
+}
+
+/** Deletes an unused item; hides one that history or recipes still reference. */
+export async function removeItem(id: number): Promise<'deleted' | 'hidden'> {
+  const u = await itemUsage(id);
+  if (u.entries + u.recipes === 0) {
+    await db.items.delete(id);
+    return 'deleted';
+  }
+  await db.items.update(id, { archived: true });
+  return 'hidden';
+}
+
+export async function restoreItem(id: number): Promise<void> {
+  const item = await db.items.get(id);
+  if (!item) return;
+  const key = nameKey(item.name);
+  const dupe = await db.items.filter((i) => !i.archived && i.id !== id && nameKey(i.name) === key).first();
+  if (dupe) throw new Error(`A saved item named "${item.name}" already exists. Rename one of them first.`);
+  await db.items.update(id, { archived: false });
 }
 
 export const itemIngredientIds = (item: Item) => flattenIngredientIds(item, getItem);

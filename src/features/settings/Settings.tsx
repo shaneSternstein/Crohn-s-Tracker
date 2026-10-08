@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { canShareFile, downloadBackup, inspectBackup, lastBackupAt, makeBackupFile, restoreBackup, shareBackup } from '../../lib/backup';
 import { Screen } from '../../ui/bits';
 
@@ -51,6 +52,11 @@ export default function Settings() {
 
   return (
     <Screen title="Settings">
+      <section className="section">
+        <h2>Saved items</h2>
+        <Link to="/manage" className="btn ghost">Manage saved items</Link>
+      </section>
+
       <section className="section">
         <h2>Backup</h2>
         <p className="empty">{last ? `Last backup: ${new Date(last).toLocaleString()}` : 'No backup yet.'}</p>

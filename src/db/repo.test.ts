@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from './schema';
-import { addPreset, logFood, movePreset, presetsOf, renamePreset, saveItem } from './repo';
+import { addPreset, logFood, presetsOf, renamePreset, reorderPresets, saveItem } from './repo';
 
 beforeEach(async () => {
   for (const t of db.tables) await t.clear();
@@ -28,7 +28,7 @@ describe('chips', () => {
   it('reorders and renames, including past entries', async () => {
     const pain = await addPreset('symptom', 'Pain');
     const gas = await addPreset('symptom', 'Gas');
-    await movePreset(gas, -1);
+    await reorderPresets([gas, pain]);
     expect((await presetsOf('symptom')).map((p) => p.label)).toEqual(['Gas', 'Pain']);
     await db.entries.add({ type: 'symptom', start: 1, ongoing: false, label: 'Pain' });
     await renamePreset(pain, 'Abdominal pain', true);

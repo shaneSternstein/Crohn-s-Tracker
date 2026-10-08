@@ -246,16 +246,10 @@ export async function addPreset(type: Preset['type'], label: string): Promise<nu
   return db.presets.add({ type, label: label.trim(), order: next });
 }
 
-export async function movePreset(id: number, dir: -1 | 1): Promise<void> {
-  const p = await db.presets.get(id);
-  if (!p) return;
-  const rows = await presetsOf(p.type);
-  const i = rows.findIndex((r) => r.id === id);
-  const j = i + dir;
-  if (j < 0 || j >= rows.length) return;
-  [rows[i], rows[j]] = [rows[j], rows[i]];
+/** Saves a chip order: ids in display order become order 0..n-1. */
+export async function reorderPresets(ids: number[]): Promise<void> {
   await db.transaction('rw', db.presets, async () => {
-    for (const [k, row] of rows.entries()) await db.presets.update(row.id!, { order: k });
+    for (const [k, id] of ids.entries()) await db.presets.update(id, { order: k });
   });
 }
 

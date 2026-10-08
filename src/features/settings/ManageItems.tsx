@@ -11,6 +11,7 @@ import { Chips, Screen } from '../../ui/bits';
 const KINDS = ['all', 'food', 'drink', 'recipe', 'medication'] as const;
 type Filter = (typeof KINDS)[number];
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const NO_USE = { entries: 0, recipes: 0 };
 
 export default function ManageItems() {
   const nav = useNavigate();
@@ -18,32 +19,10 @@ export default function ManageItems() {
   const [kind, setKind] = useState<Filter>('all');
   const [hidden, setHidden] = useState(false);
   const [msg, setMsg] = useState('');
+  const [selected, setSelected] = useState<Item | null>(null);
   const names = useIngredientNames();
   const items = useLiveQuery(async () => (await db.items.toArray()).sort((a, b) => a.name.localeCompare(b.name)), [], [] as Item[]);
   const shown = matchItems(items.filter((i) => !!i.archived === hidden && (kind === 'all' || i.kind === kind)), q, names);
-
-  const fail = (e: unknown) => setMsg(e instanceof Error ? e.message : 'Something went wrong.');
-  const remove = async (i: Item) => {
-    try {
-      const u = await itemUsage(i.id!);
-      const used = u.entries + u.recipes > 0;
-      const text = used
-        ? `"${i.name}" is used by ${plural(u.entries, 'past entry', 'past entries')}${u.recipes ? ` and ${plural(u.recipes, 'recipe', 'recipes')}` : ''}. It will be hidden from your saved lists. History keeps its name and ingredients.`
-        : `Delete "${i.name}" permanently?`;
-      if (!window.confirm(text)) return;
-      setMsg((await removeItem(i.id!)) === 'deleted' ? `Deleted "${i.name}".` : `Hid "${i.name}". Find it under Hidden.`);
-    } catch (e) {
-      fail(e);
-    }
-  };
-  const restore = async (i: Item) => {
-    try {
-      await restoreItem(i.id!);
-      setMsg(`Restored "${i.name}".`);
-    } catch (e) {
-      fail(e);
-    }
-  };
 
   return (
     <Screen title="Saved items" onBack={() => nav(-1)}>
@@ -59,22 +38,60 @@ export default function ManageItems() {
         <ul className="list">
           {shown.map((i) => (
             <li key={i.id} className="li" style={{ '--c': 'var(--surface-2)' } as CSSProperties}>
-              <span className="grow row-link">
+              <button type="button" className="row-btn" onClick={() => { setMsg(''); setSelected(i); }}>
                 <span>{i.name}</span>
                 <small className="sub">
                   {i.kind}{i.kind === 'medication' ? (i.dose ? `, ${i.dose}` : '') : `, ${plural(i.components.length, 'ingredient', 'ingredients')}`}
                 </small>
-              </span>
-              <Link className="chip" to={`/item/${i.id}`}>Edit</Link>
-              {i.archived ? (
-                <button className="chip" onClick={() => restore(i)}>Restore</button>
-              ) : (
-                <button className="chip" onClick={() => remove(i)}>Delete</button>
-              )}
+              </button>
             </li>
           ))}
         </ul>
       )}
+      {selected && <ItemSheet key={selected.id} item={selected} onClose={() => setSelected(null)} onDone={setMsg} />}
     </Screen>
+  );
+}
+
+function ItemSheet({ item, onClose, onDone }: { item: Item; onClose: () => void; onDone: (msg: string) => void }) {
+  const [err, setErr] = useState('');
+  const use = useLiveQuery(() => itemUsage(item.id!), [item.id], NO_USE);
+  const used = use.entries + use.recipes > 0;
+
+  const act = async (fn: () => Promise<string>) => {
+    try {
+      onDone(await fn());
+      onClose();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Something went wrong.');
+    }
+  };
+  const remove = () => {
+    if (!used && !window.confirm(`Delete "${item.name}" permanently?`)) return;
+    void act(async () => ((await removeItem(item.id!)) === 'deleted' ? `Deleted "${item.name}".` : `Hid "${item.name}". Find it under Hidden items.`));
+  };
+  const restore = () => act(async () => { await restoreItem(item.id!); return `Restored "${item.name}".`; });
+
+  return (
+    <div className="sheet-bg" onClick={onClose}>
+      <div className="sheet" role="dialog" aria-label={item.name} onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-head">
+          <strong>{item.name}</strong>
+          <button className="chip" aria-label="Close" onClick={onClose}>×</button>
+        </div>
+        <p className="empty">
+          {used
+            ? `Used by ${plural(use.entries, 'past entry', 'past entries')}${use.recipes ? ` and ${plural(use.recipes, 'recipe', 'recipes')}` : ''}. Removing it hides it from your saved lists, and history keeps its name and ingredients.`
+            : 'Not used by any entries or recipes.'}
+        </p>
+        {err && <p role="alert" className="error">{err}</p>}
+        <Link className="btn" to={`/item/${item.id}`}>Edit item</Link>
+        {item.archived ? (
+          <button className="btn ghost" onClick={restore}>Restore</button>
+        ) : (
+          <button className="btn ghost" onClick={remove}>{used ? 'Hide from saved lists' : 'Delete permanently'}</button>
+        )}
+      </div>
+    </div>
   );
 }

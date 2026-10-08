@@ -120,3 +120,8 @@ label.btn { cursor: pointer; }
 .sleep-tag { position: absolute; left: 46px; z-index: 3; font-size: .7rem; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--text); text-decoration: none; }
 .now-line { position: absolute; left: 34px; right: 0; height: 2px; background: var(--terracotta); z-index: 2; pointer-events: none; }
 .now-line::before { content: ''; position: absolute; left: -2px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--terracotta); }
+
+.row-btn { flex: 1; display: flex; flex-direction: column; align-items: flex-start; text-align: left; border: 0; background: none; padding: 6px 0; min-height: 40px; justify-content: center; }
+.drag { border: 0; background: none; color: var(--muted); font-size: 1.2rem; line-height: 1; letter-spacing: -2px; padding: 10px 4px; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+.li.shifting { transition: transform .15s ease; }
+.li.dragging { position: relative; z-index: 5; box-shadow: 0 8px 20px rgba(0, 0, 0, .25); }

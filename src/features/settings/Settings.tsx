@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { canShareFile, downloadBackup, inspectBackup, lastBackupAt, makeBackupFile, restoreBackup, shareBackup } from '../../lib/backup';
+import { checkForUpdate, reloadFresh } from '../../lib/update';
 import { Screen } from '../../ui/bits';
 
 const errText = (e: unknown) => (e instanceof Error ? `${e.name}: ${e.message}` : 'Unknown error.');
@@ -10,6 +11,7 @@ export default function Settings() {
   const [file, setFile] = useState<File | null>(null);
   const [msg, setMsg] = useState('');
   const [persisted, setPersisted] = useState<boolean | null>(null);
+  const [updateMsg, setUpdateMsg] = useState('');
 
   useEffect(() => {
     navigator.storage?.persisted?.().then(setPersisted);
@@ -34,6 +36,28 @@ export default function Settings() {
       }
     } catch (e) {
       setMsg(`Share failed. Use Download instead. ${errText(e)}`);
+    }
+  };
+
+  const check = async () => {
+    setUpdateMsg('Checking…');
+    try {
+      const r = await checkForUpdate();
+      setUpdateMsg(
+        r === 'installing' ? 'Update found. Installing, the app will reload.'
+          : r === 'current' ? 'You are on the latest version.'
+            : 'Updates are not available in this browser.',
+      );
+    } catch (e) {
+      setUpdateMsg(`Update check failed. ${errText(e)}`);
+    }
+  };
+  const fresh = async () => {
+    if (!window.confirm("Clear the app's saved files and reload? Your entries are not affected.")) return;
+    try {
+      await reloadFresh();
+    } catch (e) {
+      setUpdateMsg(`Reload failed. ${errText(e)}`);
     }
   };
 
@@ -99,6 +123,13 @@ export default function Settings() {
             </button>
           </>
         )}
+      </section>
+      <section className="section">
+        <h2>App</h2>
+        <p>Version: {new Date(__BUILD_TIME__).toLocaleString()}</p>
+        <button className="btn ghost" onClick={check}>Check for update</button>
+        <button className="btn ghost" onClick={fresh}>Reload fresh copy</button>
+        {updateMsg && <p role="status">{updateMsg}</p>}
       </section>
     </Screen>
   );

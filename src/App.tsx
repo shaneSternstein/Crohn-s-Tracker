@@ -4,6 +4,7 @@ import EditEntry from './features/entry/EditEntry';
 import EditSleep from './features/entry/EditSleep';
 import ItemEdit from './features/entry/ItemEdit';
 import Home from './features/home/Home';
+import Insights from './features/insights/Insights';
 import ManageChips from './features/settings/ManageChips';
 import ManageItems from './features/settings/ManageItems';
 import Settings from './features/settings/Settings';
@@ -18,6 +19,7 @@ export default function App() {
       <Route path="/manage" element={<ManageItems />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/timeline" element={<Timeline />} />
+      <Route path="/insights" element={<Insights />} />
       <Route path="/add/:type" element={<AddRoute />} />
       <Route path="/edit/:id" element={<EditEntry />} />
       <Route path="/item/:id" element={<ItemEdit />} />

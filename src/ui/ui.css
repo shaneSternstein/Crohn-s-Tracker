@@ -125,3 +125,15 @@ label.btn { cursor: pointer; }
 .drag { border: 0; background: none; color: var(--muted); font-size: 1.2rem; line-height: 1; letter-spacing: -2px; padding: 10px 4px; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 .li.shifting { transition: transform .15s ease; }
 .li.dragging { position: relative; z-index: 5; box-shadow: 0 8px 20px rgba(0, 0, 0, .25); }
+
+.panel { background: var(--surface); border-radius: var(--radius); padding: 12px 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.panel h2 { margin: 0; }
+.chart { display: block; touch-action: manipulation; }
+.chart text { fill: var(--muted); font-size: 9px; }
+.chart .grid-line { stroke: color-mix(in srgb, var(--muted) 30%, transparent); stroke-width: 1; }
+.chart .avg-line { fill: none; stroke: var(--text); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.chart .tap { fill: transparent; cursor: pointer; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .75rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.legend .sw.line { height: 2px; border-radius: 0; background: var(--text); }

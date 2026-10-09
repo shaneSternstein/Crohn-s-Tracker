@@ -45,6 +45,7 @@ export default function Home() {
         <WaterTile />
       </div>
       <Link to="/timeline" className="btn">Timeline</Link>
+      <Link to="/insights" className="btn ghost">Insights</Link>
     </main>
   );
 }

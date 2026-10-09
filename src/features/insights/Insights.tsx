@@ -10,6 +10,7 @@ import { dayRange, daysEnding, startOfDay } from '../../lib/time';
 import { Screen } from '../../ui/bits';
 import Heatmap from './Heatmap';
 import StackedBars, { type Seg } from './StackedBars';
+import Triggers from './Triggers';
 
 const RANGES = [14, 30, 90] as const;
 const AVG = 7;
@@ -24,6 +25,20 @@ const BOWEL_SEGS: Seg[] = BOWEL_GROUPS.map((g) => ({ key: g, label: g, color: BO
 const SYMPTOM_SEGS: Seg[] = SYMPTOM_GROUPS.map((g) => ({ key: g, label: g, color: SYMPTOM_COLOR[g] }));
 
 export default function Insights() {
+  const [params, setParams] = useSearchParams();
+  const view = params.get('t') === 'triggers' ? 'triggers' : 'health';
+  return (
+    <Screen title="Insights" noBack>
+      <div className="seg" role="group" aria-label="View">
+        <button aria-pressed={view === 'health'} onClick={() => setParams({ t: 'health' }, { replace: true })}>Health</button>
+        <button aria-pressed={view === 'triggers'} onClick={() => setParams({ t: 'triggers' }, { replace: true })}>Triggers</button>
+      </div>
+      {view === 'health' ? <Health /> : <Triggers />}
+    </Screen>
+  );
+}
+
+function Health() {
   const nav = useNavigate();
   const [params, setParams] = useSearchParams();
   const range = RANGES.find((r) => r === Number(params.get('r'))) ?? 30;
@@ -44,7 +59,7 @@ export default function Insights() {
   const open = (day: number) => nav(`/timeline?d=${day}`);
 
   return (
-    <Screen title="Insights" noBack>
+    <>
       <div className="seg" role="group" aria-label="Range">
         {RANGES.map((r) => (
           <button key={r} aria-pressed={range === r} onClick={() => setParams({ r: String(r) }, { replace: true })}>
@@ -72,6 +87,6 @@ export default function Insights() {
         <h2>Daily burden</h2>
         <Heatmap />
       </section>
-    </Screen>
+    </>
   );
 }

@@ -113,3 +113,15 @@ export function mergeClose(bins: number[], gap: number): number[] {
   for (const b of bins) if (!out.length || b - out[out.length - 1] >= gap) out.push(b);
   return out;
 }
+
+/** Whether an entry counts toward the chosen outcome. Only symptom and stool entries ever do. */
+export function outcomeIncludes(e: Entry, outcome: Outcome): boolean {
+  const sym = outcome.symptom?.trim().toLowerCase();
+  if (e.type === 'symptom') {
+    if (outcome.group === 'Bowel') return false;
+    if (sym !== undefined && (e.label ?? '').trim().toLowerCase() !== sym) return false;
+    return !outcome.group || outcome.group === groupOf(e.label);
+  }
+  if (e.type === 'stool') return sym === undefined && (!outcome.group || outcome.group === 'Bowel');
+  return false;
+}

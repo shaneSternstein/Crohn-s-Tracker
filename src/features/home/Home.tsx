@@ -7,13 +7,13 @@ import { Icon, type IconName } from '../../ui/icons';
 import WaterTile from './WaterTile';
 
 const TILES: { to: string; label: string; from: string; to2: string; icon: IconName }[] = [
-  { to: '/add/food', label: 'Food', from: '#BCCBAD', to2: '#A2B590', icon: 'food' },
-  { to: '/add/drink', label: 'Drink', from: '#A8BEA0', to2: '#8FA987', icon: 'drink' },
-  { to: '/add/medication', label: 'Medication', from: '#C3CCA3', to2: '#ABB78B', icon: 'medication' },
-  { to: '/add/symptom', label: 'Symptom', from: '#DB8F72', to2: '#C46A50', icon: 'symptom' },
-  { to: '/add/stool', label: 'Stool', from: '#CC7D64', to2: '#B45E48', icon: 'stool' },
-  { to: '/add/activity', label: 'Activity', from: '#F2D88E', to2: '#E3BC60', icon: 'activity' },
-  { to: '/add/sleep', label: 'Sleep', from: '#9CA6CC', to2: '#7B88B8', icon: 'sleep' },
+  { to: '/add/food', label: 'Food', from: '#CED9C3', to2: '#95AB81', icon: 'food' },
+  { to: '/add/drink', label: 'Drink', from: '#BBCDB5', to2: '#819E78', icon: 'drink' },
+  { to: '/add/medication', label: 'Medication', from: '#D2D9BA', to2: '#A0AD7B', icon: 'medication' },
+  { to: '/add/symptom', label: 'Symptom', from: '#E2A68E', to2: '#C06045', icon: 'symptom' },
+  { to: '/add/stool', label: 'Stool', from: '#D5947F', to2: '#B45E48', icon: 'stool' },
+  { to: '/add/activity', label: 'Activity', from: '#F6E3AE', to2: '#DFB34A', icon: 'activity' },
+  { to: '/add/sleep', label: 'Sleep', from: '#B4BBD8', to2: '#6A79AF', icon: 'sleep' },
 ];
 const tint = (a: string, b: string) => ({ '--from': a, '--to': b }) as CSSProperties;
 

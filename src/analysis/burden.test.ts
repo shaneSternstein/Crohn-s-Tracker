@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Entry } from '../domain/types';
 import { daysEnding } from '../lib/time';
-import { dailyStats, groupOf, movingAverage, stoolWeight } from './burden';
+import { dailyStats, groupOf, movingAverage, quartileCutoffs, shadeOf, stoolWeight } from './burden';
 
 const at = (day: number, h: number, m = 0) => new Date(2026, 9, day, h, m).getTime();
 const days = daysEnding(3, at(5, 12)); // Oct 3, 4, 5
@@ -63,5 +63,22 @@ describe('movingAverage', () => {
   it('ignores nulls inside the window', () => {
     expect(movingAverage([1, null, 3], 2)).toEqual([1, 1, 3]);
     expect(movingAverage([null, null], 2)).toEqual([null, null]);
+  });
+});
+
+describe('heatmap shading', () => {
+  it('computes quartile cutoffs from non-zero days', () => {
+    const cuts = quartileCutoffs([0, 0, 2, 3, 4, 4, 5, 6, 8, 10, 12, 15, 20, 28]);
+    expect(cuts[0]).toBeCloseTo(4);
+    expect(cuts[1]).toBeCloseTo(7);
+    expect(cuts[2]).toBeCloseTo(12.75);
+  });
+  it('uses equal steps with too few days', () => {
+    expect(quartileCutoffs([1, 2, 3])).toEqual([0.75, 1.5, 2.25]);
+    expect(quartileCutoffs([0, 0])).toEqual([0, 0, 0]);
+  });
+  it('maps values to shades', () => {
+    const cuts = [4, 7, 12.75] as const;
+    expect([0, 4, 4.1, 7, 12, 20].map((v) => shadeOf(v, cuts))).toEqual([0, 1, 2, 2, 3, 4]);
   });
 });

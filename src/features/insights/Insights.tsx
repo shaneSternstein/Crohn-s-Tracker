@@ -8,6 +8,7 @@ import {
 import type { Entry } from '../../domain/types';
 import { dayRange, daysEnding, startOfDay } from '../../lib/time';
 import { Screen } from '../../ui/bits';
+import Heatmap from './Heatmap';
 import StackedBars, { type Seg } from './StackedBars';
 
 const RANGES = [14, 30, 90] as const;
@@ -67,6 +68,10 @@ export default function Insights() {
           <p className="sub">Burden is severity times hours, up to 6 hours per entry. Days with no entries are left blank. Tap a day to open it.</p>
         </>
       )}
+      <section className="panel">
+        <h2>Daily burden</h2>
+        <Heatmap />
+      </section>
     </Screen>
   );
 }

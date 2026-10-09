@@ -25,3 +25,15 @@ export function daysEnding(count: number, t: number | Date = Date.now()): number
   }
   return out;
 }
+
+/** Day starts from the day of `first` through the day of `last`, inclusive, oldest first. DST-safe. */
+export function daysFrom(first: number | Date, last: number | Date = Date.now()): number[] {
+  const out: number[] = [];
+  const end = startOfDay(last);
+  const d = new Date(startOfDay(first));
+  while (d.getTime() <= end) {
+    out.push(d.getTime());
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}

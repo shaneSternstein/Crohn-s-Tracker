@@ -126,3 +126,34 @@ export function movingAverage(values: (number | null)[], window = 7): (number | 
     return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
   });
 }
+
+/* ---------- Heatmap shading ---------- */
+
+/** With fewer non-zero days than this, shades are equal steps up to the maximum instead of quartiles. */
+export const MIN_DAYS_FOR_QUARTILES = 8;
+
+/** Upper bounds of shades 1 to 3 (shade 4 is anything above the last). Zero values are ignored. */
+export function quartileCutoffs(values: number[]): [number, number, number] {
+  const xs = values.filter((v) => v > 0).sort((a, b) => a - b);
+  if (!xs.length) return [0, 0, 0];
+  if (xs.length < MIN_DAYS_FOR_QUARTILES) {
+    const max = xs[xs.length - 1];
+    return [max / 4, max / 2, (3 * max) / 4];
+  }
+  const at = (p: number) => {
+    const pos = (xs.length - 1) * p;
+    const lo = Math.floor(pos);
+    const hi = Math.min(lo + 1, xs.length - 1);
+    return xs[lo] + (xs[hi] - xs[lo]) * (pos - lo);
+  };
+  return [at(0.25), at(0.5), at(0.75)];
+}
+
+/** 0 = no burden, 1 (lightest) to 4 (darkest). */
+export function shadeOf(v: number, cuts: readonly [number, number, number]): 0 | 1 | 2 | 3 | 4 {
+  if (v <= 0) return 0;
+  if (v <= cuts[0]) return 1;
+  if (v <= cuts[1]) return 2;
+  if (v <= cuts[2]) return 3;
+  return 4;
+}

@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { addWater, hydrationTotal, lastWater, undoLastWater } from '../../db/repo';
 import { ML_PER_CUP, toCups } from '../../domain/hydration';
 import { dayRange } from '../../lib/time';
+import { Icon } from '../../ui/icons';
 
 const QUICK = [0.5, 2, 4];
 const STEP = 0.5;
@@ -33,8 +34,9 @@ export default function WaterTile() {
 
   return (
     <>
-      <div className="tile alt water-tile">
+      <div className="tile water-tile">
         <button className="water-main" onClick={quick}>
+          <Icon name="water" />
           <span>Water</span>
           <small>{cupsLabel(toCups(total))} today, tap +1</small>
           {err && <small role="alert" className="error">{err}</small>}

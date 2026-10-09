@@ -127,8 +127,8 @@ label.btn { cursor: pointer; }
 .li.shifting { transition: transform .15s ease; }
 .li.dragging { position: relative; z-index: 5; box-shadow: 0 8px 20px rgba(0, 0, 0, .25); }
 
-.panel { background: var(--surface); border-radius: var(--radius); padding: 12px 12px 14px; display: flex; flex-direction: column; gap: 8px; }
-.panel h2 { margin: 0; }
+.card { background: var(--surface); border-radius: var(--radius); padding: 12px 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.card h2 { margin: 0; }
 .chart { display: block; touch-action: manipulation; }
 .chart text { fill: var(--muted); font-size: 9px; }
 .chart .grid-line { stroke: color-mix(in srgb, var(--muted) 30%, transparent); stroke-width: 1; }
@@ -147,10 +147,11 @@ label.btn { cursor: pointer; }
 .water-tile { --tile: var(--sky-soft); }
 .water-tile .water-main small { color: var(--ink); }
 
-.hm-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.hm-title { border: 0; background: none; padding: 4px 0; font-weight: 700; font-size: 1rem; color: var(--text); }
-.hm-title:disabled { cursor: default; }
-.hm { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.hm-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; }
+.hm-title { font-size: 1rem; }
+.hm-viewport { overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.hm-strip { display: flex; width: 300%; will-change: transform; }
+.hm-pane { flex: 0 0 33.3333%; min-width: 0; }
 .hm-day { position: relative; border: 2px solid transparent; background: transparent; border-radius: 10px; padding: 10px 0; font-size: .9rem; color: var(--text); }
 .hm-day:disabled { opacity: .35; cursor: default; }
 .hm-day[data-gap='true'] { border-style: dashed; border-color: var(--muted); }

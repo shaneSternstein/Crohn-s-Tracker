@@ -5,8 +5,8 @@ export type IconName = 'food' | 'drink' | 'medication' | 'symptom' | 'stool' | '
 const PATHS: Record<IconName, ReactNode> = {
   food: (
     <>
-      <path d="M6 3v6a2 2 0 0 0 4 0V3M8 3v18" />
-      <path d="M17 21V3c-2 1-3.5 4-3.5 7.5 0 1.5 1 2.5 3.5 2.5" />
+      <path d="M4 3v5.5a3.5 3.5 0 0 0 7 0V3M7.5 3v18" />
+      <path d="M19 21V3c-2.2 1.2-3.5 4-3.5 7.5 0 1.5 1 2.5 3.5 2.5" />
     </>
   ),
   drink: (
@@ -24,15 +24,18 @@ const PATHS: Record<IconName, ReactNode> = {
   symptom: <path d="M3 12h4l2-6 4 12 2-6h6" />,
   stool: (
     <>
-      <path d="M6 3h8v5H6z" />
-      <path d="M4 10h16c0 4-2.5 7-6 7h-4c-3.5 0-6-3-6-7z" />
-      <path d="M9 17v4h6v-4" />
+      <path d="M6 2.5h12v6H6z" />
+      <path d="M11.2 5.5h1.6" />
+      <path d="M6 11V9.5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1V11" />
+      <path d="M4 11h16c0 3.5-2 6-5 6.5v2H9v-2C6 17 4 14.5 4 11z" />
+      <path d="M7 21.5h10" />
     </>
   ),
   activity: (
     <>
-      <circle cx="15" cy="4.5" r="1.8" />
-      <path d="M14 8.5l-2 5.5 3 2.5 1 4.5M12 14l-3.5 1.5M13.5 10l-3.5.5-2 2.5M13.5 10l3 2.5 2.5-.5" />
+      <circle cx="6" cy="16" r="3.5" />
+      <circle cx="18" cy="16" r="3.5" />
+      <path d="M6 16l3-7h7l2 7M11 16l5-7M11 16L9 9M7.5 9h3M16 9l-.8-2.5h2.3" />
     </>
   ),
   sleep: <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />,

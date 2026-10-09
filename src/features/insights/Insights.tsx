@@ -57,18 +57,18 @@ export default function Insights() {
         <p className="empty">No entries in this range.</p>
       ) : (
         <>
-          <section className="panel">
+          <section className="card">
             <h2>Bowel movements per day</h2>
             <StackedBars bars={bowelBars} segs={BOWEL_SEGS} avg={avgOf((s) => s.bowelCount)} height={150} onPick={open} />
           </section>
-          <section className="panel">
+          <section className="card">
             <h2>Symptom burden per day</h2>
             <StackedBars bars={symptomBars} segs={SYMPTOM_SEGS} avg={avgOf((s) => s.symptomTotal)} height={170} labels onPick={open} />
           </section>
           <p className="sub">Burden is severity times hours, up to 6 hours per entry. Days with no entries are left blank. Tap a day to open it.</p>
         </>
       )}
-      <section className="panel">
+      <section className="card">
         <h2>Daily burden</h2>
         <Heatmap />
       </section>

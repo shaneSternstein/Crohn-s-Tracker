@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { canShareFile, downloadBackup, inspectBackup, lastBackupAt, makeBackupFile, restoreBackup, shareBackup } from '../../lib/backup';
+import { THEMES, THEME_LABEL, getTheme, setTheme, type Theme } from '../../lib/theme';
 import { checkForUpdate, reloadFresh } from '../../lib/update';
 import { Screen } from '../../ui/bits';
 
@@ -12,6 +13,7 @@ export default function Settings() {
   const [msg, setMsg] = useState('');
   const [persisted, setPersisted] = useState<boolean | null>(null);
   const [updateMsg, setUpdateMsg] = useState('');
+  const [theme, setThemeState] = useState<Theme>(getTheme());
 
   useEffect(() => {
     navigator.storage?.persisted?.().then(setPersisted);
@@ -80,6 +82,15 @@ export default function Settings() {
         <h2>Manage</h2>
         <Link to="/manage" className="btn ghost">Saved items</Link>
         <Link to="/chips" className="btn ghost">Chips (symptoms, activities, stool tags)</Link>
+      </section>
+
+      <section className="section">
+        <h2>Appearance</h2>
+        <div className="seg" role="group" aria-label="Theme">
+          {THEMES.map((t) => (
+            <button key={t} aria-pressed={theme === t} onClick={() => { setTheme(t); setThemeState(t); }}>{THEME_LABEL[t]}</button>
+          ))}
+        </div>
       </section>
 
       <section className="section">

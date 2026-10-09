@@ -5,9 +5,12 @@ import App from './App';
 import { backfillSnapshots } from './db/repo';
 import { seedIfEmpty } from './db/seed';
 import { ensureInstalledStamp } from './lib/backup';
+import { applyTheme } from './lib/theme';
 import './theme/tokens.css';
 import './ui/ui.css';
 import { registerSW } from 'virtual:pwa-register';
+
+applyTheme();
 
 // Autoupdate mode reloads the page once a new version has installed; also check whenever the app returns to the foreground.
 registerSW({

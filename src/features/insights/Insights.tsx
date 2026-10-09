@@ -43,7 +43,7 @@ export default function Insights() {
   const open = (day: number) => nav(`/timeline?d=${day}`);
 
   return (
-    <Screen title="Insights">
+    <Screen title="Insights" noBack>
       <div className="seg" role="group" aria-label="Range">
         {RANGES.map((r) => (
           <button key={r} aria-pressed={range === r} onClick={() => setParams({ r: String(r) }, { replace: true })}>

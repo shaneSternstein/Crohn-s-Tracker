@@ -1,8 +1,9 @@
+:root { --tabbar: 56px; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 3px solid var(--terracotta); outline-offset: 2px; }
 
-.screen { max-width: 720px; margin: 0 auto; padding: 16px 16px 96px; display: flex; flex-direction: column; gap: 16px; }
+.screen { max-width: 720px; margin: 0 auto; padding: 16px 16px calc(var(--tabbar) + 48px); display: flex; flex-direction: column; gap: 16px; }
 .screen header { display: flex; align-items: center; gap: 8px; }
 .screen h1 { font-size: 1.5rem; margin: 0; }
 .back { font-size: 2rem; line-height: 1; text-decoration: none; color: var(--text); padding: 0 10px; }
@@ -30,7 +31,7 @@ button { cursor: pointer; }
 .seg { display: flex; background: var(--surface); border-radius: 999px; padding: 4px; }
 .seg button { border: 0; background: none; padding: 8px 14px; border-radius: 999px; }
 .seg [aria-pressed='true'] { background: var(--btn-bg); color: var(--btn-fg); }
-.scroll { height: calc(100dvh - 190px); overflow-y: auto; border-radius: var(--radius); background: var(--surface); position: relative; }
+.scroll { height: calc(100dvh - 190px - var(--tabbar)); overflow-y: auto; border-radius: var(--radius); background: var(--surface); position: relative; }
 .cols, .grid { display: grid; grid-template-columns: 40px repeat(3, 1fr); gap: 0 6px; }
 .cols { position: sticky; top: 0; z-index: 3; background: var(--surface); padding: 10px 0 6px; font-weight: 600; font-size: .85rem; text-align: center; }
 .hours { position: relative; }
@@ -137,3 +138,7 @@ label.btn { cursor: pointer; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend .sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .legend .sw.line { height: 2px; border-radius: 0; background: var(--text); }
+
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; justify-content: center; background: var(--surface); border-top: 1px solid var(--surface-2); padding-bottom: env(safe-area-inset-bottom); }
+.tab { flex: 1; max-width: 240px; height: var(--tabbar); display: flex; align-items: center; justify-content: center; text-decoration: none; color: var(--muted); font-weight: 600; }
+.tab[aria-current='page'] { color: var(--text); box-shadow: inset 0 3px 0 var(--terracotta); }

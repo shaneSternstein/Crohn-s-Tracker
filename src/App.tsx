@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import AddRoute from './features/entry/AddRoute';
 import EditEntry from './features/entry/EditEntry';
 import EditSleep from './features/entry/EditSleep';
@@ -9,9 +9,14 @@ import ManageChips from './features/settings/ManageChips';
 import ManageItems from './features/settings/ManageItems';
 import Settings from './features/settings/Settings';
 import Timeline from './features/timeline/Timeline';
+import TabBar from './ui/TabBar';
+
+const TAB_PATHS = ['/', '/timeline', '/insights'];
 
 export default function App() {
+  const { pathname } = useLocation();
   return (
+    <>
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/sleep/:id" element={<EditSleep />} />
@@ -24,5 +29,7 @@ export default function App() {
       <Route path="/edit/:id" element={<EditEntry />} />
       <Route path="/item/:id" element={<ItemEdit />} />
     </Routes>
+    {TAB_PATHS.includes(pathname) && <TabBar />}
+    </>
   );
 }

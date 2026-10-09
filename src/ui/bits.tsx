@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-export const Screen = ({ title, children, onBack }: { title: string; children: ReactNode; onBack?: () => void }) => (
+export const Screen = ({ title, children, onBack, noBack }: { title: string; children: ReactNode; onBack?: () => void; noBack?: boolean }) => (
   <main className="screen">
     <header>
-      {onBack ? (
+      {noBack ? null : onBack ? (
         <button className="back" aria-label="Back" onClick={onBack}>‹</button>
       ) : (
         <Link to="/" className="back" aria-label="Home">‹</Link>

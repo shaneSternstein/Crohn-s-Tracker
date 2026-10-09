@@ -77,6 +77,14 @@ export function parseLine(raw: string): IngredientLine | null {
   };
 }
 
+/** Drops quantity and unit from a parsed line, keeping the amount as text in the note. */
+export function amountToNote(l: IngredientLine): IngredientLine {
+  const amount =
+    l.qty !== undefined ? [String(Math.round(l.qty * 100) / 100), l.unit?.replace('_', ' ')].filter(Boolean).join(' ') : '';
+  const note = [amount, l.note].filter(Boolean).join(', ');
+  return note ? { name: l.name, note } : { name: l.name };
+}
+
 /** One line per ingredient; falls back to comma/semicolon splitting for single-line pastes. */
 export function parseIngredients(text: string): IngredientLine[] {
   const parts = /\r?\n/.test(text.trim()) ? text.split(/\r?\n/) : text.split(/[,;]/);

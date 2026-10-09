@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
-import { backfillSnapshots } from './db/repo';
+import { backfillIngredients, backfillSnapshots } from './db/repo';
 import { seedIfEmpty } from './db/seed';
 import { ensureInstalledStamp } from './lib/backup';
 import { applyTheme } from './lib/theme';
@@ -27,7 +27,7 @@ registerSW({
 ensureInstalledStamp();
 void navigator.storage?.persist?.(); // ask the browser not to evict our data
 
-seedIfEmpty().then(backfillSnapshots).catch(() => undefined).finally(() => {
+seedIfEmpty().then(backfillSnapshots).then(backfillIngredients).catch(() => undefined).finally(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <BrowserRouter>

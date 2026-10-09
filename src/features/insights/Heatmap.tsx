@@ -171,7 +171,7 @@ export default function Heatmap() {
         ))}
       </div>
       <p className="sub">
-        Swipe to change month. Shades are quartiles of all your days with burden. A dashed outline means no food or drink was logged that day, so it is not used in correlation analysis. Blank days have no entries.
+        Swipe to change month. Shades are quartiles of all your days with burden, never below the default scale of 5, 10, and 20. A dashed outline means no food or drink was logged that day, so it is not used in correlation analysis. Blank days have no entries.
       </p>
     </>
   );

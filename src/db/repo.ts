@@ -16,7 +16,7 @@ async function ingredientId(name: string): Promise<number> {
 }
 
 /** Turns editable lines into components, plus direct and fully expanded ingredient ids. Call inside a transaction. */
-async function resolveLines(lines: IngredientLine[]) {
+async function resolveLines(lines: IngredientLine[], fallbackName?: string) {
   const components: Component[] = [];
   const all = new Set<number>();
   for (const l of lines) {
@@ -30,6 +30,12 @@ async function resolveLines(lines: IngredientLine[]) {
       components.push({ ingredientId: id, ...meta });
       all.add(id);
     }
+  }
+  // No ingredients given: the item's own name stands in, so plain foods and drinks still count as exposures.
+  if (!components.length && fallbackName?.trim()) {
+    const id = await ingredientId(fallbackName);
+    components.push({ ingredientId: id });
+    all.add(id);
   }
   const direct = [...new Set(components.flatMap((c) => (c.ingredientId !== undefined ? [c.ingredientId] : [])))];
   return { components, direct, all: [...all] };
@@ -64,7 +70,7 @@ export function saveItem(draft: ItemDraft, id?: number): Promise<number> {
     const dupe = await db.items.filter((i) => !i.archived && nameKey(i.name) === key && i.id !== id).first();
     if (dupe) throw new Error(`An item named "${name}" already exists. Choose a different name.`);
 
-    const { components, direct } = await resolveLines(draft.lines);
+    const { components, direct } = await resolveLines(draft.lines, draft.kind === 'medication' ? undefined : name);
     const now = Date.now();
     const base = { kind: draft.kind, name, barcode: draft.barcode, dose: draft.dose, components, ingredientIds: direct };
 
@@ -129,7 +135,8 @@ interface FoodLog { type: 'food' | 'drink'; start: number; itemId: number; lines
 
 export function logFood(a: FoodLog): Promise<number> {
   return db.transaction('rw', db.entries, db.items, db.ingredients, async () => {
-    const { components, all } = await resolveLines(a.lines);
+    const named = await db.items.get(a.itemId);
+    const { components, all } = await resolveLines(a.lines, named?.name);
     const id = await db.entries.add({
       type: a.type, start: a.start, ongoing: false, itemId: a.itemId,
       components, ingredientIds: all, modified: a.modified || undefined,
@@ -144,9 +151,9 @@ export function logFood(a: FoodLog): Promise<number> {
 
 export function updateFoodEntry(id: number, a: { start: number; itemId: number; lines: IngredientLine[] }) {
   return db.transaction('rw', db.entries, db.items, db.ingredients, async () => {
-    const { components, all } = await resolveLines(a.lines);
     const item = await db.items.get(a.itemId);
-    const modified = !!item && sigOf(components) !== sigOf(item.components);
+    const { components, all } = await resolveLines(a.lines, item?.name);
+    const modified = !!item && item.components.length > 0 && sigOf(components) !== sigOf(item.components);
     await db.entries.update(id, {
       start: a.start, itemId: a.itemId, components, ingredientIds: all, modified: modified || undefined,
     });
@@ -177,6 +184,26 @@ export async function backfillSnapshots(): Promise<void> {
     const all = [...(await flattenIngredientIds(item, getItem))];
     await db.entries.update(e.id!, { components: item.components, ingredientIds: all });
   }
+}
+
+/** Gives food and drink items and entries with no ingredients their own name as the ingredient. Idempotent. */
+export async function backfillIngredients(): Promise<void> {
+  await db.transaction('rw', db.items, db.entries, db.ingredients, async () => {
+    const bare = await db.items.filter((i) => i.kind !== 'medication' && i.components.length === 0).toArray();
+    for (const it of bare) {
+      const id = await ingredientId(it.name);
+      await db.items.update(it.id!, { components: [{ ingredientId: id }], ingredientIds: [id] });
+    }
+    const entries = await db.entries
+      .filter((e) => (e.type === 'food' || e.type === 'drink') && e.itemId !== undefined && !e.ingredientIds?.length)
+      .toArray();
+    for (const e of entries) {
+      const item = await db.items.get(e.itemId!);
+      if (!item || item.kind === 'medication') continue;
+      const all = [...(await flattenIngredientIds(item, getItem))];
+      if (all.length) await db.entries.update(e.id!, { components: item.components, ingredientIds: all });
+    }
+  });
 }
 
 /* ---------- Entries ---------- */

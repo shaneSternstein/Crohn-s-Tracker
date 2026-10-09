@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import type { IngredientLine, Item, Unit } from '../../domain/types';
-import { parseIngredients } from '../../lib/parseIngredients';
-
-const UNIT_LIST: Unit[] = ['g', 'kg', 'oz', 'lb', 'ml', 'l', 'tsp', 'tbsp', 'cup', 'fl_oz'];
+import type { IngredientLine, Item } from '../../domain/types';
+import { amountToNote, parseIngredients } from '../../lib/parseIngredients';
 
 interface Props {
   lines: IngredientLine[];
@@ -24,7 +22,7 @@ export default function IngredientList({ lines, onChange, saved }: Props) {
         className="btn ghost"
         disabled={!text.trim()}
         onClick={() => {
-          onChange([...lines, ...parseIngredients(text)]);
+          onChange([...lines, ...parseIngredients(text).map(amountToNote)]);
           setText('');
         }}
       >
@@ -32,18 +30,6 @@ export default function IngredientList({ lines, onChange, saved }: Props) {
       </button>
       {lines.map((l, i) => (
         <div className="row" key={i}>
-          <input
-            type="number"
-            step="any"
-            aria-label="Quantity"
-            value={l.qty ?? ''}
-            disabled={l.itemId !== undefined}
-            onChange={(e) => set(i, { qty: e.target.value === '' ? undefined : Number(e.target.value) })}
-          />
-          <select aria-label="Unit" value={l.unit ?? ''} onChange={(e) => set(i, { unit: (e.target.value || undefined) as Unit | undefined })}>
-            <option value="" />
-            {UNIT_LIST.map((u) => <option key={u} value={u}>{u.replace('_', ' ')}</option>)}
-          </select>
           <input aria-label="Name" value={l.name ?? ''} disabled={l.itemId !== undefined} onChange={(e) => set(i, { name: e.target.value })} />
           <button className="chip" aria-label="Remove" onClick={() => onChange(lines.filter((_, k) => k !== i))}>×</button>
         </div>

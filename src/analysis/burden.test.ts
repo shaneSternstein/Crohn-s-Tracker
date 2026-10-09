@@ -68,14 +68,17 @@ describe('movingAverage', () => {
 
 describe('heatmap shading', () => {
   it('computes quartile cutoffs from non-zero days', () => {
-    const cuts = quartileCutoffs([0, 0, 2, 3, 4, 4, 5, 6, 8, 10, 12, 15, 20, 28]);
-    expect(cuts[0]).toBeCloseTo(4);
-    expect(cuts[1]).toBeCloseTo(7);
-    expect(cuts[2]).toBeCloseTo(12.75);
+    const cuts = quartileCutoffs([0, 0, 6, 9, 12, 12, 15, 18, 24, 30, 36, 45, 60, 84]);
+    expect(cuts[0]).toBeCloseTo(12);
+    expect(cuts[1]).toBeCloseTo(21);
+    expect(cuts[2]).toBeCloseTo(38.25);
   });
-  it('uses equal steps with too few days', () => {
-    expect(quartileCutoffs([1, 2, 3])).toEqual([0.75, 1.5, 2.25]);
-    expect(quartileCutoffs([0, 0])).toEqual([0, 0, 0]);
+  it('never goes below the default cutoffs', () => {
+    expect(quartileCutoffs([2, 3, 4, 4, 5, 6, 8, 10, 12, 15, 20, 28])).toEqual([5, 10, 20]);
+  });
+  it('uses the defaults with too few days', () => {
+    expect(quartileCutoffs([1, 2, 3])).toEqual([5, 10, 20]);
+    expect(quartileCutoffs([])).toEqual([5, 10, 20]);
   });
   it('maps values to shades', () => {
     const cuts = [4, 7, 12.75] as const;

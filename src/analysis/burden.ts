@@ -129,24 +129,26 @@ export function movingAverage(values: (number | null)[], window = 7): (number | 
 
 /* ---------- Heatmap shading ---------- */
 
-/** With fewer non-zero days than this, shades are equal steps up to the maximum instead of quartiles. */
+/** With fewer non-zero days than this, the default cutoffs are used instead of quartiles. */
 export const MIN_DAYS_FOR_QUARTILES = 8;
+/** Minimum scale: upper bounds of shades 1 to 3. Quartile cutoffs never go below these. */
+export const DEFAULT_CUTOFFS: readonly [number, number, number] = [5, 10, 20];
 
-/** Upper bounds of shades 1 to 3 (shade 4 is anything above the last). Zero values are ignored. */
+/** Upper bounds of shades 1 to 3 (shade 4 is anything above the last). Zero values are ignored. Never below DEFAULT_CUTOFFS. */
 export function quartileCutoffs(values: number[]): [number, number, number] {
   const xs = values.filter((v) => v > 0).sort((a, b) => a - b);
-  if (!xs.length) return [0, 0, 0];
-  if (xs.length < MIN_DAYS_FOR_QUARTILES) {
-    const max = xs[xs.length - 1];
-    return [max / 4, max / 2, (3 * max) / 4];
-  }
+  if (xs.length < MIN_DAYS_FOR_QUARTILES) return [...DEFAULT_CUTOFFS];
   const at = (p: number) => {
     const pos = (xs.length - 1) * p;
     const lo = Math.floor(pos);
     const hi = Math.min(lo + 1, xs.length - 1);
     return xs[lo] + (xs[hi] - xs[lo]) * (pos - lo);
   };
-  return [at(0.25), at(0.5), at(0.75)];
+  return [
+    Math.max(at(0.25), DEFAULT_CUTOFFS[0]),
+    Math.max(at(0.5), DEFAULT_CUTOFFS[1]),
+    Math.max(at(0.75), DEFAULT_CUTOFFS[2]),
+  ];
 }
 
 /** 0 = no burden, 1 (lightest) to 4 (darkest). */

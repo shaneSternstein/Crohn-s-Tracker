@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseIngredients, parseLine } from './parseIngredients';
+import { amountToNote, parseIngredients, parseLine } from './parseIngredients';
 
 describe('parseLine', () => {
   it('parses mixed numbers, units, notes', () => {
@@ -22,5 +22,13 @@ describe('parseLine', () => {
 describe('parseIngredients', () => {
   it('splits single-line comma lists', () => {
     expect(parseIngredients('rice, chicken, broccoli').map((l) => l.name)).toEqual(['rice', 'chicken', 'broccoli']);
+  });
+});
+
+describe('amountToNote', () => {
+  it('moves the amount into the note', () => {
+    expect(amountToNote(parseLine('1 1/2 cups flour, sifted')!)).toEqual({ name: 'flour', note: '1.5 cup, sifted' });
+    expect(amountToNote(parseLine('2 eggs')!)).toEqual({ name: 'eggs', note: '2' });
+    expect(amountToNote(parseLine('salt')!)).toEqual({ name: 'salt' });
   });
 });

@@ -1,4 +1,4 @@
-import { backfillSnapshots } from '../db/repo';
+import { backfillIngredients, backfillSnapshots } from '../db/repo';
 import { db } from '../db/schema';
 
 const APP = 'tracker';
@@ -52,6 +52,7 @@ export async function restoreBackup(raw: unknown): Promise<void> {
     }
   });
   await backfillSnapshots();
+  await backfillIngredients();
 }
 
 export const lastBackupAt = () => Number(store.get(LAST)) || null;

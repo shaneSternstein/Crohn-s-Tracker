@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Entry } from '../domain/types';
 import type { Cell } from './stage1';
-import { exposureList, isOutcomeKey, loggedDayCount, outcomeFromKey, rankTriggers } from './triggers';
+import { exposureList, isOutcomeKey, loggedDayCount, outcomeFromKey, rankTriggers, symptomCounts } from './triggers';
 
 const H = 3_600_000;
 const cell = (ingredientId: number, window: Cell['window'], p: Partial<Cell>): Cell => ({ ingredientId, window, n: 8, reliability: 'none', ...p });
@@ -52,5 +52,18 @@ describe('exposureList', () => {
 
   it('counts days with food or drink', () => {
     expect(loggedDayCount([food(t, [1]), food(t + H, [1]), pain(t + 30 * H)])).toBe(1);
+  });
+});
+
+describe('single symptom outcomes', () => {
+  it('maps s: keys to a symptom outcome', () => {
+    expect(isOutcomeKey('s:Gas')).toBe(true);
+    expect(isOutcomeKey('s:')).toBe(false);
+    expect(outcomeFromKey('s:Gas')).toEqual({ symptom: 'Gas' });
+  });
+  it('lists symptoms with enough entries', () => {
+    const e = (label: string): Entry => ({ type: 'symptom', start: 1, ongoing: false, label, severity: 2 });
+    const entries = [...Array(10).fill(0).map(() => e('Gas')), ...Array(3).fill(0).map(() => e('Pain'))];
+    expect(symptomCounts(entries)).toEqual([{ label: 'Gas', count: 10 }]);
   });
 });

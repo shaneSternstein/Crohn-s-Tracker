@@ -2,6 +2,7 @@ import { useMemo, useState, type CSSProperties } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/schema';
+import { setIngredientHidden } from '../../db/repo';
 import { useIngredientNames } from '../../db/hooks';
 import { MIN_EXPOSURES, type Cell } from '../../analysis/stage1';
 import { better, exposureList, isOutcomeKey, outcomeFromKey } from '../../analysis/triggers';
@@ -97,7 +98,10 @@ export default function TriggerDetail() {
           ))}
         </ul>
       )}
-      <p className="sub">Associations, not causes. Not medical advice.</p>
+      <button className="btn ghost" onClick={() => void setIngredientHidden(ingredientId, true).then(() => nav(-1))}>
+        Hide from results
+      </button>
+      <p className="sub">Associations, not causes. Not medical advice. Hidden ingredients can be restored in Settings.</p>
     </Screen>
   );
 }

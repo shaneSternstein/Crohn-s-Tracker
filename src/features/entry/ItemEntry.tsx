@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useIngredientNames } from '../../db/hooks';
-import { linesFromComponents, logFood, nameKey, recentItems, saveItem } from '../../db/repo';
+import { getItemByBarcode, linesFromComponents, logFood, nameKey, recentItems, saveItem } from '../../db/repo';
 import type { IngredientLine, Item, ItemKind } from '../../domain/types';
+import { fetchProduct, normalizeBarcode } from '../../lib/openfoodfacts';
 import { matchItems } from '../../lib/search';
 import { ErrorText } from '../../ui/bits';
 import { TimeField } from '../../ui/TimeField';
 import { useSaving } from '../../ui/useSaving';
+import BarcodeSheet from './BarcodeSheet';
 import IngredientList from './IngredientList';
 
 /** Comparable fingerprint of an ingredient list, ignoring blank rows. */
@@ -29,6 +31,9 @@ export default function ItemEntry({ kind }: { kind: 'food' | 'drink' }) {
   const [base, setBase] = useState('');
   const [q, setQ] = useState('');
   const [all, setAll] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [barcode, setBarcode] = useState('');
+  const [scanMsg, setScanMsg] = useState('');
   const names = useIngredientNames();
   const saved = useLiveQuery(
     async () =>
@@ -51,13 +56,44 @@ export default function ItemEntry({ kind }: { kind: 'food' | 'drink' }) {
     setBase('');
   };
 
+  /** A scanned or typed barcode: a saved item with it is used as a template, otherwise Open Food Facts fills the form. */
+  const handleCode = async (raw: string) => {
+    setScanning(false);
+    const code = normalizeBarcode(raw);
+    if (!code) {
+      setScanMsg('That does not look like a barcode.');
+      return;
+    }
+    const known = await getItemByBarcode(code);
+    if (known) {
+      await pick(known);
+      setScanMsg('Loaded your saved item.');
+      return;
+    }
+    setScanMsg('Looking up…');
+    setBarcode(code);
+    try {
+      const p = await fetchProduct(code);
+      if (!p.found) {
+        setScanMsg('Product not found. Enter it manually; the barcode is saved with it.');
+        return;
+      }
+      setTpl(null);
+      setName(p.name);
+      setLines(p.ingredients.map((n) => ({ name: n })));
+      setScanMsg(p.ingredients.length ? 'Found. Check the ingredients, then save.' : 'Found, but it has no ingredient list. Add them below.');
+    } catch {
+      setScanMsg('Could not reach Open Food Facts. Enter it manually, or try again later.');
+    }
+  };
+
   const changed = tpl !== null && (name.trim() !== tpl.name || sig(lines) !== base);
   const sameName = tpl !== null && nameKey(name) === nameKey(tpl.name);
   const kindFor = (k: ItemKind): ItemKind => (k === 'food' && lines.some((l) => l.itemId !== undefined) ? 'recipe' : k);
   const log = (itemId: number, modified: boolean) =>
     logFood({ type: kind, start: at ?? Date.now(), itemId, lines, modified }).then(() => nav('/'));
 
-  const create = async () => log(await saveItem({ kind: kindFor(kind), name, lines }), false);
+  const create = async () => log(await saveItem({ kind: kindFor(kind), name, lines, barcode: barcode || undefined }), false);
   const update = async () => {
     await saveItem({ kind: kindFor(tpl!.kind), name, barcode: tpl!.barcode, lines }, tpl!.id);
     await log(tpl!.id!, false);
@@ -70,6 +106,9 @@ export default function ItemEntry({ kind }: { kind: 'food' | 'drink' }) {
   return (
     <>
       <TimeField label="Time" value={at} onChange={setAt} quick={[15]} />
+      <button type="button" className="btn ghost" onClick={() => { setScanMsg(''); setScanning(true); }}>Scan barcode</button>
+      {scanMsg && <p role="status" className="empty">{scanMsg}</p>}
+      {scanning && <BarcodeSheet onCode={(c) => void handleCode(c)} onClose={() => setScanning(false)} />}
 
       {saved.length > 0 && (
         <>

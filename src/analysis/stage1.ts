@@ -85,7 +85,7 @@ function analyze(
  */
 export function runStage1(
   entries: Entry[], outcome: Outcome = {}, now = Date.now(),
-  opts: { permutations?: number; seed?: number } = {},
+  opts: { permutations?: number; seed?: number; ignore?: ReadonlySet<number> } = {},
 ): Cell[] {
   const grid = buildGrid(entries, outcome, now);
   if (!grid) return [];
@@ -95,7 +95,10 @@ export function runStage1(
   const cells: Cell[] = [];
   for (const w of LAG_WINDOWS) {
     const { sum, valid } = windowSums(grid, w.from, w.to);
-    for (const [id, bins] of exposures) cells.push(analyze(id, bins, w, grid, sum, valid, B, rnd));
+    for (const [id, bins] of exposures) {
+      if (opts.ignore?.has(id)) continue;
+      cells.push(analyze(id, bins, w, grid, sum, valid, B, rnd));
+    }
   }
   const idx = cells.flatMap((c, i) => (c.p !== undefined ? [i] : []));
   const q = benjaminiHochberg(idx.map((i) => cells[i].p!));

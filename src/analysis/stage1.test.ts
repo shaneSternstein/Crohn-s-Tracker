@@ -89,3 +89,13 @@ describe('reliabilityOf', () => {
     expect(reliabilityOf(12, 0.6)).toBe('none');
   });
 });
+
+describe('ignored ingredients', () => {
+  it('leaves them out of the results', () => {
+    const entries = makeSynthetic({ days: 30 });
+    const now = new Date(2026, 0, 31).getTime();
+    const cells = runStage1(entries, {}, now, { permutations: 100, ignore: new Set([1]) });
+    expect(cells.length).toBeGreaterThan(0);
+    expect(cells.some((c) => c.ingredientId === 1)).toBe(false);
+  });
+});

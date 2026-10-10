@@ -4,6 +4,7 @@ import { canShareFile, downloadBackup, inspectBackup, lastBackupAt, makeBackupFi
 import { THEMES, THEME_LABEL, getTheme, setTheme, type Theme } from '../../lib/theme';
 import { checkForUpdate, reloadFresh } from '../../lib/update';
 import { Screen } from '../../ui/bits';
+import HiddenIngredients from './HiddenIngredients';
 
 const errText = (e: unknown) => (e instanceof Error ? `${e.name}: ${e.message}` : 'Unknown error.');
 
@@ -135,9 +136,11 @@ export default function Settings() {
           </>
         )}
       </section>
+      <HiddenIngredients />
       <section className="section">
         <h2>App</h2>
         <p>Version: {new Date(__BUILD_TIME__).toLocaleString()}</p>
+        <p className="empty">Product data from Open Food Facts (ODbL licence).</p>
         <button className="btn ghost" onClick={check}>Check for update</button>
         <button className="btn ghost" onClick={fresh}>Reload fresh copy</button>
         {updateMsg && <p role="status">{updateMsg}</p>}

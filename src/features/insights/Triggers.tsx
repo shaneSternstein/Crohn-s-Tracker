@@ -2,7 +2,7 @@ import { useMemo, useState, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useIngredientNames } from '../../db/hooks';
 import type { Cell } from '../../analysis/stage1';
-import { OUTCOME_KEYS, isOutcomeKey, loggedDayCount, rankTriggers } from '../../analysis/triggers';
+import { OUTCOME_KEYS, isOutcomeKey, loggedDayCount, rankTriggers, symptomCounts } from '../../analysis/triggers';
 import { LAG_WINDOWS } from '../../analysis/windows';
 import { Tag, cap, fmt } from './Tag';
 import { useStage1 } from './useStage1';
@@ -27,9 +27,10 @@ export default function Triggers() {
     }, { replace: true });
 
   const days = useMemo(() => loggedDayCount(entries), [entries]);
+  const symptoms = useMemo(() => symptomCounts(entries), [entries]);
   const ranked = useMemo(() => (cells ? rankTriggers(cells) : null), [cells]);
   const name = (id: number) => cap(names.get(id) ?? '?');
-  const link = (id: number) => `/triggers/${id}?o=${o}`;
+  const link = (id: number) => `/triggers/${id}?o=${encodeURIComponent(o)}`;
 
   const rows = ranked?.rows ?? [];
   const shown = showAll ? rows : rows.filter((r) => r.reliability !== 'none');
@@ -52,6 +53,12 @@ export default function Triggers() {
           </button>
         ))}
       </div>
+      {symptoms.length > 0 && (
+        <select aria-label="Single symptom" value={o.startsWith('s:') ? o : ''} onChange={(e) => e.target.value && set({ o: e.target.value })}>
+          <option value="">Single symptom…</option>
+          {symptoms.map((s) => <option key={s.label} value={`s:${s.label}`}>{s.label} ({s.count})</option>)}
+        </select>
+      )}
       <p className="sub">{days} days with food or drink logged. Results are most useful after about 28 days.</p>
       <div className="seg" role="group" aria-label="Layout">
         <button aria-pressed={view === 'list'} onClick={() => set({ v: 'list' })}>List</button>

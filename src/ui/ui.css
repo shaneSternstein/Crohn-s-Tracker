@@ -174,3 +174,5 @@ label.btn { cursor: pointer; }
 .lag-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--text); text-decoration: none; padding: 6px 0; }
 .lag-cell { display: block; text-align: center; border: 2px solid transparent; border-radius: 10px; padding: 10px 0; font-size: .8rem; color: var(--muted); text-decoration: none; }
 .lag-cell:is([data-shade='3'], [data-shade='4']) { color: var(--ink); }
+
+.scan-video { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--radius-sm); background: #000; }

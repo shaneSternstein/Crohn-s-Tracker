@@ -206,6 +206,9 @@ export async function backfillIngredients(): Promise<void> {
   });
 }
 
+/** Hides or unhides an ingredient in trigger analysis. Updating a field to undefined deletes it in Dexie. */
+export const setIngredientHidden = (id: number, hidden: boolean) => db.ingredients.update(id, { hidden: hidden || undefined });
+
 /* ---------- Entries ---------- */
 
 export function addEntry(entry: Omit<Entry, 'id'>): Promise<number> {

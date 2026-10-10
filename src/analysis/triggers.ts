@@ -1,13 +1,33 @@
 import type { Entry } from '../domain/types';
 import { HOUR, startOfDay } from '../lib/time';
+import type { SymptomGroup } from './burden';
 import type { Cell, Reliability } from './stage1';
 import { outcomeIncludes, type Outcome } from './windows';
 
 export const OUTCOME_KEYS = ['all', 'Pain', 'Digestive', 'Systemic', 'Bowel'] as const;
-export type OutcomeKey = (typeof OUTCOME_KEYS)[number];
+/** A group key, or `s:Label` for one symptom. */
+export type OutcomeKey = (typeof OUTCOME_KEYS)[number] | `s:${string}`;
 
-export const isOutcomeKey = (k: string | null): k is OutcomeKey => OUTCOME_KEYS.some((o) => o === k);
-export const outcomeFromKey = (k: OutcomeKey): Outcome => (k === 'all' ? {} : { group: k });
+export const isOutcomeKey = (k: string | null): k is OutcomeKey =>
+  k !== null && (OUTCOME_KEYS.some((o) => o === k) || (k.startsWith('s:') && k.length > 2));
+export const outcomeFromKey = (k: OutcomeKey): Outcome =>
+  k === 'all' ? {} : k.startsWith('s:') ? { symptom: k.slice(2) } : { group: k as SymptomGroup | 'Bowel' };
+
+/** A symptom needs at least this many entries to be offered as its own outcome. */
+export const MIN_SYMPTOM_COUNT = 10;
+
+/** Symptom labels with enough entries, most frequent first. */
+export function symptomCounts(entries: Entry[], min = MIN_SYMPTOM_COUNT): { label: string; count: number }[] {
+  const m = new Map<string, { label: string; count: number }>();
+  for (const e of entries) {
+    const label = e.type === 'symptom' ? e.label?.trim() : undefined;
+    if (!label) continue;
+    const cur = m.get(label.toLowerCase());
+    if (cur) cur.count++;
+    else m.set(label.toLowerCase(), { label, count: 1 });
+  }
+  return [...m.values()].filter((x) => x.count >= min).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
 
 export const RANK: Record<Reliability, number> = { insufficient: 0, none: 1, weak: 2, moderate: 3, strong: 4 };
 

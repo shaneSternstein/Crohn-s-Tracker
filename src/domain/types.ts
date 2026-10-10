@@ -12,6 +12,7 @@ export interface Ingredient {
   name: string;
   nameKey: string;
   density?: number; // g per ml (future)
+  hidden?: boolean; // left out of trigger analysis
 }
 
 /** A line in an item's composition: a raw ingredient or another item (recipes). */

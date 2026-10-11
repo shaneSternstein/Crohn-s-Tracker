@@ -35,7 +35,7 @@ export default function EditSleep() {
   return (
     <Screen title="Edit sleep" onBack={back}>
       <SleepEntry key={log.id} log={log} onDone={back} />
-      <button className="btn ghost" disabled={busy} onClick={() => run(remove)}>Delete entry</button>
+      <button className="btn ghost" disabled={busy} onClick={() => run(remove, { quiet: true })}>Delete entry</button>
       <ErrorText message={error} />
     </Screen>
   );

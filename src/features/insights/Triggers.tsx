@@ -72,7 +72,7 @@ export default function Triggers() {
       ) : view === 'list' ? (
         <ul className="list">
           {shown.map((c) => (
-            <li key={c.ingredientId} className="li" style={{ '--c': 'var(--terracotta)' } as CSSProperties}>
+            <li key={c.ingredientId} className="li" style={{ '--c': 'var(--coral)' } as CSSProperties}>
               <Link className="grow row-link" to={link(c.ingredientId)}>
                 <span>{name(c.ingredientId)}</span>
                 <small className="sub">{windowLabel(c)} · {fmt(c.exposedMean)} vs {fmt(c.baselineMean)} · {c.n} exposures</small>

@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { foldQuantity, type LegacyComponent } from '../domain/components';
 import type { Entry, HydrationLog, Ingredient, Item, Preset, SleepLog } from '../domain/types';
 
 export class TrackerDB extends Dexie {
@@ -26,6 +27,14 @@ export class TrackerDB extends Dexie {
         .delete(),
     );
     this.version(3).stores({ entries: '++id, type, start, end, *ingredientIds' });
+    // Amounts and units on ingredient lines are gone; existing ones become note text.
+    this.version(4).stores({}).upgrade(async (tx) => {
+      for (const name of ['items', 'entries']) {
+        await tx.table(name).toCollection().modify((row: { components?: LegacyComponent[] }) => {
+          if (Array.isArray(row.components)) row.components = row.components.map(foldQuantity);
+        });
+      }
+    });
   }
 }
 

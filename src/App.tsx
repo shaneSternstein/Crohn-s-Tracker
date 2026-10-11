@@ -11,6 +11,7 @@ import ManageItems from './features/settings/ManageItems';
 import Settings from './features/settings/Settings';
 import Timeline from './features/timeline/Timeline';
 import TabBar from './ui/TabBar';
+import TideOverlay from './ui/TideOverlay';
 
 const TAB_PATHS = ['/', '/timeline', '/insights'];
 
@@ -32,6 +33,7 @@ export default function App() {
       <Route path="/item/:id" element={<ItemEdit />} />
     </Routes>
     {TAB_PATHS.includes(pathname) && <TabBar />}
+    <TideOverlay />
     </>
   );
 }

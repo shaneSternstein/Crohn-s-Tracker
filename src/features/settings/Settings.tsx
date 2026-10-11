@@ -73,7 +73,7 @@ export default function Settings() {
       await restoreBackup(raw);
       setMsg('Backup restored.');
     } catch (e) {
-      setMsg(e instanceof SyntaxError ? 'This file is not a Tracker backup.' : `Import failed. ${errText(e)}`);
+      setMsg(e instanceof SyntaxError ? 'This file is not an Ebb backup.' : `Import failed. ${errText(e)}`);
     }
   };
 

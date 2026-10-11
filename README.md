@@ -1,4 +1,4 @@
-# Tracker
+# Ebb
 
 Local-first PWA. React + TypeScript + Dexie (IndexedDB). No backend.
 

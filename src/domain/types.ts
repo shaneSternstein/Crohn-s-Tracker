@@ -3,8 +3,6 @@ export type EntryType = 'food' | 'drink' | 'medication' | 'symptom' | 'stool' | 
 export type Severity = 1 | 2 | 3 | 4 | 5;
 export type Bristol = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
-/** Canonical unit codes. Original text goes to Component.note when ambiguous. */
-export type Unit = 'g' | 'kg' | 'oz' | 'lb' | 'ml' | 'l' | 'tsp' | 'tbsp' | 'cup' | 'fl_oz';
 
 /** Shared, normalized ingredient. Optional density is reserved for later volume/weight conversion. */
 export interface Ingredient {
@@ -19,8 +17,6 @@ export interface Ingredient {
 export interface Component {
   ingredientId?: number;
   itemId?: number;
-  qty?: number;
-  unit?: Unit;
   note?: string;
 }
 
@@ -83,7 +79,5 @@ export interface Preset {
 export interface IngredientLine {
   name?: string;
   itemId?: number;
-  qty?: number;
-  unit?: Unit;
   note?: string;
 }

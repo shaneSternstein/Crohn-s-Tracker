@@ -10,11 +10,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png'],
       manifest: {
-        name: 'Tracker',
-        short_name: 'Tracker',
+        name: 'Ebb',
+        short_name: 'Ebb',
         display: 'standalone',
-        background_color: '#F6F0E4',
-        theme_color: '#1F2A44',
+        background_color: '#F6F8FC',
+        theme_color: '#F6F8FC',
         start_url: '/',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

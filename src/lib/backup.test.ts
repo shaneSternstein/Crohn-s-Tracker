@@ -19,3 +19,18 @@ describe('backup', () => {
     await expect(restoreBackup({ app: 'tracker', dbVersion: 99, tables: {} })).rejects.toThrow();
   });
 });
+
+describe('old backups', () => {
+  it('folds quantities into notes on restore', async () => {
+    const file = {
+      app: 'tracker', dbVersion: 3, exportedAt: 1,
+      tables: {
+        ingredients: [{ id: 1, name: 'flour', nameKey: 'flour' }],
+        items: [{ id: 1, kind: 'food', name: 'Bread', components: [{ ingredientId: 1, qty: 2, unit: 'cup', note: 'sifted' }], ingredientIds: [1], createdAt: 1, lastUsedAt: 1, useCount: 0 }],
+      },
+    };
+    await restoreBackup(file);
+    const item = (await db.items.toArray())[0];
+    expect(item.components[0]).toEqual({ ingredientId: 1, note: '2 cup, sifted' });
+  });
+});

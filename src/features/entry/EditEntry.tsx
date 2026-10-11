@@ -40,7 +40,7 @@ export default function EditEntry() {
       ) : (
         <EventEntry key={entry.id} type={entry.type} entry={entry} onDone={back} />
       )}
-      <button className="btn ghost" disabled={busy} onClick={() => run(remove)}>Delete entry</button>
+      <button className="btn ghost" disabled={busy} onClick={() => run(remove, { quiet: true })}>Delete entry</button>
       <ErrorText message={error} />
     </Screen>
   );

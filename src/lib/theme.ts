@@ -21,6 +21,12 @@ export function applyTheme(t: Theme = getTheme()): void {
   else el.setAttribute('data-theme', t);
 }
 
+/** Whether the dark theme is in effect right now. */
+export function isDark(): boolean {
+  const t = getTheme();
+  return t === 'dark' || (t === 'system' && typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches);
+}
+
 export function setTheme(t: Theme): void {
   try {
     localStorage.setItem(KEY, t);

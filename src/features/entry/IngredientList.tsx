@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { IngredientLine, Item } from '../../domain/types';
-import { amountToNote, parseIngredients } from '../../lib/parseIngredients';
+import { parseIngredients } from '../../lib/parseIngredients';
 
 interface Props {
   lines: IngredientLine[];
@@ -22,7 +22,7 @@ export default function IngredientList({ lines, onChange, saved }: Props) {
         className="btn ghost"
         disabled={!text.trim()}
         onClick={() => {
-          onChange([...lines, ...parseIngredients(text).map(amountToNote)]);
+          onChange([...lines, ...parseIngredients(text)]);
           setText('');
         }}
       >

@@ -20,7 +20,7 @@ async function resolveLines(lines: IngredientLine[], fallbackName?: string) {
   const components: Component[] = [];
   const all = new Set<number>();
   for (const l of lines) {
-    const meta = { qty: l.qty, unit: l.unit, note: l.note };
+    const meta = { note: l.note };
     if (l.itemId !== undefined) {
       components.push({ itemId: l.itemId, ...meta });
       const child = await db.items.get(l.itemId);
@@ -42,12 +42,12 @@ async function resolveLines(lines: IngredientLine[], fallbackName?: string) {
 }
 
 const sigOf = (cs: Component[]) =>
-  JSON.stringify(cs.map((c) => [c.ingredientId ?? null, c.itemId ?? null, c.qty ?? null, c.unit ?? null, c.note ?? null]));
+  JSON.stringify(cs.map((c) => [c.ingredientId ?? null, c.itemId ?? null, c.note ?? null]));
 
 export async function linesFromComponents(components: Component[]): Promise<IngredientLine[]> {
   const lines: IngredientLine[] = [];
   for (const c of components) {
-    const meta = { qty: c.qty, unit: c.unit, note: c.note };
+    const meta = { note: c.note };
     if (c.itemId !== undefined) lines.push({ itemId: c.itemId, name: (await db.items.get(c.itemId))?.name, ...meta });
     else if (c.ingredientId !== undefined) lines.push({ name: (await db.ingredients.get(c.ingredientId))?.name, ...meta });
   }

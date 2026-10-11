@@ -1,6 +1,6 @@
-import type { IngredientLine, Unit } from '../domain/types';
+import type { IngredientLine } from '../domain/types';
 
-const UNITS: Record<string, Unit> = {
+const UNITS: Record<string, string> = {
   cup: 'cup', cups: 'cup', c: 'cup',
   tbsp: 'tbsp', tbs: 'tbsp', tablespoon: 'tbsp', tablespoons: 'tbsp',
   tsp: 'tsp', teaspoon: 'tsp', teaspoons: 'tsp',
@@ -43,7 +43,7 @@ export function parseLine(raw: string): IngredientLine | null {
 
   const notes: string[] = [];
   let qty: number | undefined;
-  let unit: Unit | undefined;
+  let unit: string | undefined;
 
   const q = QTY_RE.exec(s);
   if (q) {
@@ -69,20 +69,10 @@ export function parseLine(raw: string): IngredientLine | null {
 
   const cleaned = name.replace(/\s+/g, ' ').trim().toLowerCase();
   if (!cleaned) return null;
-  return {
-    name: cleaned,
-    ...(qty !== undefined && { qty }),
-    ...(unit && { unit }),
-    ...(notes.length && { note: notes.filter(Boolean).join('; ') }),
-  };
-}
-
-/** Drops quantity and unit from a parsed line, keeping the amount as text in the note. */
-export function amountToNote(l: IngredientLine): IngredientLine {
-  const amount =
-    l.qty !== undefined ? [String(Math.round(l.qty * 100) / 100), l.unit?.replace('_', ' ')].filter(Boolean).join(' ') : '';
-  const note = [amount, l.note].filter(Boolean).join(', ');
-  return note ? { name: l.name, note } : { name: l.name };
+  // The amount is kept as text in the note; ingredient lines have no quantity fields.
+  const amount = qty !== undefined ? [String(Math.round(qty * 100) / 100), unit?.replace('_', ' ')].filter(Boolean).join(' ') : '';
+  const note = [amount, notes.filter(Boolean).join('; ')].filter(Boolean).join(', ');
+  return note ? { name: cleaned, note } : { name: cleaned };
 }
 
 /** One line per ingredient; falls back to comma/semicolon splitting for single-line pastes. */

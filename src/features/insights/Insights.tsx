@@ -16,10 +16,10 @@ const RANGES = [14, 30, 90] as const;
 const AVG = 7;
 
 const BOWEL_COLOR: Record<BowelGroup, string> = {
-  Constipated: '#6B7F5E', Normal: '#A2B590', 'Low fiber': '#C9D2A8', Loose: '#8B6B4A',
+  Constipated: '#7CC8B2', Normal: '#B8E3D6', 'Low fiber': '#9FB2F7', Loose: '#2E4A62',
 };
 const SYMPTOM_COLOR: Record<SymptomGroup, string> = {
-  Pain: '#C46A50', Digestive: '#E3BC60', Systemic: '#7B88B8', Other: '#A89F94',
+  Pain: '#F27A69', Digestive: '#F7BE4B', Systemic: '#5560E0', Other: '#A3A9BD',
 };
 const BOWEL_SEGS: Seg[] = BOWEL_GROUPS.map((g) => ({ key: g, label: g, color: BOWEL_COLOR[g] }));
 const SYMPTOM_SEGS: Seg[] = SYMPTOM_GROUPS.map((g) => ({ key: g, label: g, color: SYMPTOM_COLOR[g] }));

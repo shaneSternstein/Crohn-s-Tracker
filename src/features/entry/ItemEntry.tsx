@@ -17,7 +17,7 @@ const sig = (ls: IngredientLine[]) =>
   JSON.stringify(
     ls
       .filter((l) => l.itemId !== undefined || l.name?.trim())
-      .map((l) => [l.name?.trim().toLowerCase() ?? '', l.itemId ?? null, l.qty ?? null, l.unit ?? null, l.note ?? null]),
+      .map((l) => [l.name?.trim().toLowerCase() ?? '', l.itemId ?? null, l.note ?? null]),
   );
 
 /** Food and drink entry. Saved items are templates: picking one fills the form so it can be adjusted before logging. */

@@ -1,4 +1,5 @@
 import { backfillIngredients, backfillSnapshots } from '../db/repo';
+import { foldRow } from '../domain/components';
 import { db } from '../db/schema';
 
 const APP = 'tracker';
@@ -28,7 +29,7 @@ export async function buildBackup(): Promise<Backup> {
 function parse(raw: unknown): Backup {
   const b = raw as Partial<Backup> | null;
   if (!b || b.app !== APP || typeof b.tables !== 'object' || b.tables === null) {
-    throw new Error('This file is not a Tracker backup.');
+    throw new Error('This file is not an Ebb backup.');
   }
   if (typeof b.dbVersion !== 'number' || b.dbVersion > db.verno) {
     throw new Error('This backup was made by a newer version of the app.');
@@ -48,7 +49,10 @@ export async function restoreBackup(raw: unknown): Promise<void> {
     for (const t of db.tables) {
       await t.clear();
       const rows = b.tables[t.name];
-      if (Array.isArray(rows) && rows.length) await t.bulkAdd(rows);
+      if (Array.isArray(rows) && rows.length) {
+        const fixed = t.name === 'items' || t.name === 'entries' ? rows.map((r) => foldRow(r as Parameters<typeof foldRow>[0])) : rows;
+        await t.bulkAdd(fixed);
+      }
     }
   });
   await backfillSnapshots();
@@ -62,7 +66,7 @@ export const backupDue = () => Date.now() - (lastBackupAt() ?? (Number(store.get
 
 /** Builds the file ahead of the tap so sharing starts inside the user gesture. */
 export async function makeBackupFile(): Promise<File> {
-  const name = `tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  const name = `ebb-backup-${new Date().toISOString().slice(0, 10)}.json`;
   return new File([JSON.stringify(await buildBackup())], name, { type: 'application/json' });
 }
 
@@ -71,7 +75,7 @@ export const canShareFile = (f: File) => !!navigator.canShare?.({ files: [f] });
 /** Returns false if the user dismissed the share sheet. Throws on other failures. */
 export async function shareBackup(f: File): Promise<boolean> {
   try {
-    await navigator.share({ files: [f], title: 'Tracker backup' });
+    await navigator.share({ files: [f], title: 'Ebb backup' });
   } catch (e) {
     if ((e as DOMException).name === 'AbortError') return false;
     throw e;

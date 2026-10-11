@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { foldQuantity, foldRow } from './components';
+import { foldQuantity, foldRow, type LegacyComponent } from './components';
 
 describe('foldQuantity', () => {
   it('moves amount and unit into the note', () => {
@@ -11,7 +11,7 @@ describe('foldQuantity', () => {
     expect(foldQuantity({ ingredientId: 1, note: 'ripe' })).toEqual({ ingredientId: 1, note: 'ripe' });
   });
   it('is idempotent on rows', () => {
-    const row = foldRow({ components: [{ ingredientId: 1, qty: 2, unit: 'g' }] });
+    const row = foldRow<{ components: LegacyComponent[] }>({ components: [{ ingredientId: 1, qty: 2, unit: 'g' }] });
     expect(foldRow(row)).toEqual(row);
     expect(row.components[0].note).toBe('2 g');
   });

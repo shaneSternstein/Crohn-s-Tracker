@@ -4,6 +4,8 @@ import { canShareFile, downloadBackup, inspectBackup, lastBackupAt, makeBackupFi
 import { THEMES, THEME_LABEL, getTheme, setTheme, type Theme } from '../../lib/theme';
 import { checkForUpdate, reloadFresh } from '../../lib/update';
 import { Screen } from '../../ui/bits';
+import TideMark from '../../ui/TideMark';
+import Wordmark from '../../ui/Wordmark';
 import HiddenIngredients from './HiddenIngredients';
 
 const errText = (e: unknown) => (e instanceof Error ? `${e.name}: ${e.message}` : 'Unknown error.');
@@ -79,6 +81,10 @@ export default function Settings() {
 
   return (
     <Screen title="Settings">
+      <div className="lockup">
+        <TideMark size={44} />
+        <Wordmark height={36} />
+      </div>
       <section className="section">
         <h2>Manage</h2>
         <Link to="/manage" className="btn ghost">Saved items</Link>

@@ -1,4 +1,4 @@
-# Ebb
+<img src="public/wordmark.svg" alt="Ebb" height="48">
 
 Local-first PWA. React + TypeScript + Dexie (IndexedDB). No backend.
 

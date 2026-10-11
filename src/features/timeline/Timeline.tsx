@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { startOfDay } from '../../lib/time';
+import SettingsLink from '../../ui/SettingsLink';
 import DatePicker from './DatePicker';
 import DayPanel, { HH, WAKING_START } from './DayPanel';
 
@@ -104,6 +105,10 @@ export default function Timeline() {
 
   return (
     <main className="screen">
+      <header>
+        <h1>Timeline</h1>
+        <SettingsLink />
+      </header>
       <div className="tl-head">
         <button className="chip arrow" aria-label="Previous day" onClick={() => slide(-1)}>←</button>
         <button className="chip" aria-label="Pick a date" onClick={() => setPicking(true)}>

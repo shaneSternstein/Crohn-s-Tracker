@@ -8,6 +8,7 @@ import {
 import type { Entry } from '../../domain/types';
 import { dayRange, daysEnding, startOfDay } from '../../lib/time';
 import { Screen } from '../../ui/bits';
+import EmptyState from '../../ui/EmptyState';
 import Heatmap from './Heatmap';
 import StackedBars, { type Seg } from './StackedBars';
 import Triggers from './Triggers';
@@ -28,7 +29,7 @@ export default function Insights() {
   const [params, setParams] = useSearchParams();
   const view = params.get('t') === 'triggers' ? 'triggers' : 'health';
   return (
-    <Screen title="Insights" noBack>
+    <Screen title="Insights" noBack settings>
       <div className="seg" role="group" aria-label="View">
         <button aria-pressed={view === 'health'} onClick={() => setParams({ t: 'health' }, { replace: true })}>Health</button>
         <button aria-pressed={view === 'triggers'} onClick={() => setParams({ t: 'triggers' }, { replace: true })}>Triggers</button>
@@ -69,7 +70,7 @@ function Health() {
       </div>
 
       {!shown.some((s) => s.hasData) ? (
-        <p className="empty">No entries in this range.</p>
+        <EmptyState title="No entries yet">Log something and it will appear here.</EmptyState>
       ) : (
         <>
           <section className="card">

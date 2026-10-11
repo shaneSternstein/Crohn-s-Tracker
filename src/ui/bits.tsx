@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import SettingsLink from './SettingsLink';
 
-export const Screen = ({ title, children, onBack, noBack }: { title: string; children: ReactNode; onBack?: () => void; noBack?: boolean }) => (
+export const Screen = ({ title, children, onBack, noBack, settings }: { title: string; children: ReactNode; onBack?: () => void; noBack?: boolean; settings?: boolean }) => (
   <main className="screen">
     <header>
       {noBack ? null : onBack ? (
@@ -10,6 +11,7 @@ export const Screen = ({ title, children, onBack, noBack }: { title: string; chi
         <Link to="/" className="back" aria-label="Home">‹</Link>
       )}
       <h1>{title}</h1>
+      {settings && <SettingsLink />}
     </header>
     {children}
   </main>

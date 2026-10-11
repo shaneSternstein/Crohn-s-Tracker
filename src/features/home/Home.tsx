@@ -6,6 +6,7 @@ import { backupDue, lastBackupAt } from '../../lib/backup';
 import { skyFor } from '../../lib/sky';
 import { isDark } from '../../lib/theme';
 import { Icon, type IconName } from '../../ui/icons';
+import SettingsLink from '../../ui/SettingsLink';
 import WaterTile from './WaterTile';
 
 const WHITE = '#FFFFFF';
@@ -47,7 +48,7 @@ export default function Home() {
       <main className="screen" style={sky?.light ? ({ '--home-fg': '#F4F6FF' } as CSSProperties) : undefined}>
         <header className="home-head">
           <h1>{now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</h1>
-          <Link to="/settings" className="chip">Settings</Link>
+          <SettingsLink />
         </header>
         <BackupReminder />
         <div className="tiles">

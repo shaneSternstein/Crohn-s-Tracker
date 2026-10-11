@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 
-export type IconName = 'food' | 'drink' | 'medication' | 'symptom' | 'stool' | 'activity' | 'sleep' | 'water';
+export type IconName =
+  | 'food' | 'drink' | 'medication' | 'symptom' | 'stool' | 'activity' | 'sleep' | 'water'
+  | 'gear' | 'tabLog' | 'tabTimeline' | 'tabInsights';
 
 const PATHS: Record<IconName, ReactNode> = {
   food: (
@@ -40,6 +42,33 @@ const PATHS: Record<IconName, ReactNode> = {
   ),
   sleep: <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />,
   water: <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" />,
+  gear: (
+    <>
+      <circle cx="12" cy="12" r="3.2" />
+      <circle cx="12" cy="12" r="6.6" />
+      <path d="M19.2 12h2.4M17.1 17.1l1.7 1.7M12 19.2v2.4M6.9 17.1l-1.7 1.7M4.8 12H2.4M6.9 6.9L5.2 5.2M12 4.8V2.4M17.1 6.9l1.7-1.7" />
+    </>
+  ),
+  tabLog: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v8M8 12h8" />
+    </>
+  ),
+  tabTimeline: (
+    <>
+      <path d="M10 3v18" />
+      <circle cx="10" cy="7" r="2.4" fill="var(--surface)" />
+      <circle cx="10" cy="14" r="2.4" fill="var(--surface)" />
+      <path d="M15 7h5M15 14h3" />
+    </>
+  ),
+  tabInsights: (
+    <>
+      <circle cx="16.5" cy="6.5" r="3" />
+      <path d="M3 17c3-5 6 5 9 0s6-4 9 0" />
+    </>
+  ),
 };
 
 /** Simple line icon, drawn with the current text color. */

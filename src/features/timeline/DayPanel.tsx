@@ -9,6 +9,7 @@ import type { Entry, Item, SleepLog } from '../../domain/types';
 import { HOUR, dayRange, startOfDay } from '../../lib/time';
 import { labelOf } from './label';
 import { layoutColumn } from './layout';
+import EmptyState from '../../ui/EmptyState';
 
 export const HH = 56; // px per hour
 export const WAKING_START = 6.5; // hours; initial scroll position
@@ -69,7 +70,7 @@ function DayPanel({ day, view }: { day: number; view: 'day' | 'list' }) {
     return (
       <div className="panel">
         {rows.length === 0 ? (
-          <p className="empty">Nothing logged for this day.</p>
+          <EmptyState title="Nothing logged">Entries for this day will appear here.</EmptyState>
         ) : (
           <ul className="list">
             {rows.map((r) =>

@@ -4,6 +4,7 @@ import { useIngredientNames } from '../../db/hooks';
 import type { Cell } from '../../analysis/stage1';
 import { OUTCOME_KEYS, isOutcomeKey, loggedDayCount, rankTriggers, symptomCounts } from '../../analysis/triggers';
 import { LAG_WINDOWS } from '../../analysis/windows';
+import EmptyState from '../../ui/EmptyState';
 import { Tag, cap, fmt } from './Tag';
 import { useStage1 } from './useStage1';
 
@@ -66,9 +67,13 @@ export default function Triggers() {
       </div>
 
       {!ranked ? (
-        <p className="empty">Calculating…</p>
+        <EmptyState title="Calculating…" loading />
       ) : shown.length === 0 ? (
-        <p className="empty">No ingredient shows higher burden after exposure yet.</p>
+        days < 28 ? (
+        <EmptyState title="Not enough data yet">Keep logging. Ebb needs about four weeks of days before it can look for patterns.</EmptyState>
+      ) : (
+        <EmptyState title="No clear pattern yet">No ingredient shows higher burden after exposure so far.</EmptyState>
+      )
       ) : view === 'list' ? (
         <ul className="list">
           {shown.map((c) => (
